@@ -11,6 +11,13 @@ pnpm --dir web dev       # web :5173（经 nginx :18080 访问）
 
 入口：`http://localhost:18080`（`/`→web，`/api/`→api，`/sandbox/`→sandbox）。
 
+## 契约生成与校验（后端 schema 改动后必跑）
+
+```bash
+make openapi        # 生成：后端 app.openapi() → web/openapi.json（再到 web/e2e 各自 orval 重生成客户端）
+make openapi-check  # 校验：落盘契约过期即非零退出；改了 controller/schema 却没重生成时变红
+```
+
 ## 发布构建（AC10：仅本节含 docker build）
 
 ```bash

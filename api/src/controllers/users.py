@@ -79,3 +79,5 @@ def delete_user(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except Forbidden as e:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+    except Conflict as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))

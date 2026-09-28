@@ -67,3 +67,35 @@ def test_admin_cannot_write_permissions(client):
         json={"permission_codes": ["workflows:read"]},
     )
     assert r.status_code == 403
+
+
+def test_delete_user_with_resources_returns_409_not_500(client):
+    # 回归：名下仍有流程的用户直接删，FK 冲突必须收敛为 409，不能 500。
+    root = auth_headers(login(client, "super_admin"))
+    r = client.post(
+        "/users",
+        headers=root,
+        json={"email": "owner@example.com", "password": "Pass12345", "role": "admin"},
+    )
+    assert r.status_code == 201, r.text
+    uid = r.json()["id"]
+    r = client.post("/auth/login", json={"email": "owner@example.com", "password": "Pass12345"})
+    assert r.status_code == 200, r.text
+    owner = auth_headers(r.json()["access_token"])
+    dag = {
+        "nodes": [
+            {"id": "s", "type": "start", "config": {}},
+            {"id": "e", "type": "end", "config": {}},
+        ],
+        "edges": [{"id": "e1", "source": "s", "target": "e"}],
+    }
+    r = client.post("/workflows", headers=owner, json={"name": "owned", "description": "", "dag": dag})
+    assert r.status_code == 201, r.text
+    wid = r.json()["id"]
+    r = client.delete(f"/users/{uid}", headers=root)
+    assert r.status_code == 409, r.text
+    # 先清子资源再删主，恢复 204。
+    r = client.delete(f"/workflows/{wid}", headers=root)
+    assert r.status_code == 204, r.text
+    r = client.delete(f"/users/{uid}", headers=root)
+    assert r.status_code == 204, r.text

@@ -1,5 +1,6 @@
 """用户管理编排（service owner）。读写沿 tenant_id 约束。"""
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from src.core.rbac import can_manage_actor
@@ -63,7 +64,11 @@ def delete_user(db: Session, *, tenant_id: str, actor_role: Role, user_id: str) 
     user = _get(db, tenant_id=tenant_id, user_id=user_id)
     can_manage_actor(actor_role=actor_role, target_role=user.role, is_self=False)
     db.delete(user)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError as e:  # FK 残留（名下仍有流程等）收敛为 Conflict，不透 500
+        db.rollback()
+        raise Conflict("用户仍有未清理资源，先删除其名下资源") from e
 
 
 def _get(db: Session, *, tenant_id: str, user_id: str) -> User:

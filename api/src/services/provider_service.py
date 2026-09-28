@@ -1,6 +1,7 @@
 """模型双通道编排（service owner）。
 wire 结论（PLAN-001 R1 spike）：opencode-go 暂无公开原生协议文档，
 首版按 OpenAI-compatible wire 承载 + 独立 type/headers 钩子，待官方协议明确后加原生 client。
+spike 脚手架见 api/scripts/spike_opencode_go.py（PLAN-002 S2，只读探测，无凭证时结论为 downgrade）。
 """
 
 import httpx

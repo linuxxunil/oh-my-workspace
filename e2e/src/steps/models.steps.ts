@@ -11,11 +11,20 @@ When(
     const { page } = this
     const { gotoSection } = await import('../support/nav')
     await gotoSection(this, '/models')
-    await page.getByRole('textbox', { name: '名称' }).fill(name)
-    await page.getByRole('combobox', { name: '类型' }).selectOption(type)
-    await page.getByRole('textbox', { name: '地址' }).fill(url)
-    await page.getByRole('button', { name: '模型供应商' }).click()
-    await expect(page.locator('li', { hasText: name })).toBeVisible()
+    try {
+      await page.getByRole('textbox', { name: '名称' }).fill(name)
+      await page.getByRole('combobox', { name: '类型' }).selectOption(type)
+      await page.getByRole('textbox', { name: '地址' }).fill(url)
+      await page.getByRole('button', { name: '模型供应商' }).click()
+      await expect(page.locator('li', { hasText: name })).toBeVisible()
+    } catch (e) {
+      // 建了一半不能留孤儿，按名清掉再抛原错。
+      const { deleteProvider, findProviderByName } = await import('../support/api')
+      await findProviderByName(name)
+        .then((id) => (id ? deleteProvider(id) : undefined))
+        .catch(() => undefined)
+      throw e
+    }
     this.currentProviderName = name
 
     const { findProviderByName } = await import('../support/api')

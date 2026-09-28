@@ -1,4 +1,4 @@
-.PHONY: lint type-check test infra-up infra-ps web-check web-test web-build openapi dev-api dev-sandbox
+.PHONY: lint type-check test infra-up infra-ps web-check web-test web-build openapi openapi-check spike-opencode-go dev-api dev-sandbox
 
 lint:
 	PYTHONPATH=api uv run --project api ruff check api
@@ -23,6 +23,14 @@ web-build:
 
 openapi:
 	PYTHONPATH=api uv run --project api python -c "import json; from src.main import app; open('web/openapi.json','w').write(json.dumps(app.openapi(), ensure_ascii=False, indent=2))"
+
+# 契约新鲜度门禁：落盘契约过期即非零退出（生成用 openapi，校验用 openapi-check）
+openapi-check:
+	PYTHONPATH=api uv run --project api python api/scripts/check_openapi.py
+
+# opencode-go 原生协议 spike（只读探测，结论见 stdout；无凭证时给 downgrade 结论）
+spike-opencode-go:
+	PYTHONPATH=api uv run --project api python api/scripts/spike_opencode_go.py
 
 # 本地直跑（开发期唯一方式；发布才 docker build，见 docs/release.md）
 dev-api:

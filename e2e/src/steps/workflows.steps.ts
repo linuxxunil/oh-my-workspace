@@ -50,9 +50,18 @@ When('新建流程 名称以 {string} 为前缀', async function (this: AppWorld
   await gotoSection(this, '/workflows')
   // 注：section 经 aria-labelledby 亦被命名，getByLabel 会命中 section+input 两个，
   // 故表单控件一律用 textbox/combobox role 加名称定位。
-  await page.getByRole('textbox', { name: '流程' }).fill(name)
-  await page.getByRole('button', { name: '新建流程' }).click()
-  await expect(page.locator('li', { hasText: name })).toBeVisible()
+  try {
+    await page.getByRole('textbox', { name: '流程' }).fill(name)
+    await page.getByRole('button', { name: '新建流程' }).click()
+    await expect(page.locator('li', { hasText: name })).toBeVisible()
+  } catch (e) {
+    // 建了一半（POST 已成功但列表未刷出）不能留孤儿，按名清掉再抛原错。
+    const { deleteWorkflow, findWorkflowByName } = await import('../support/api')
+    await findWorkflowByName(name)
+      .then((id) => (id ? deleteWorkflow(id) : undefined))
+      .catch(() => undefined)
+    throw e
+  }
   this.currentWorkflowName = name
 
   const { findWorkflowByName } = await import('../support/api')
