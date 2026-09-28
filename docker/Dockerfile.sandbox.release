@@ -1,0 +1,11 @@
+# 发布时构建（确认发布才执行）。底座：本地 python:3.11-slim；跑时必须 net=none（见 docs/release.md）。
+ARG PYTHON_BASE=python:3.11-slim
+FROM ${PYTHON_BASE}
+
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+WORKDIR /srv/sandbox
+COPY sandbox/pyproject.toml ./
+COPY sandbox/src ./src
+RUN pip install --no-cache-dir fastapi "uvicorn>=0.30" "pydantic>=2.0"
+EXPOSE 8090
+CMD ["uvicorn", "src.server:app", "--host", "0.0.0.0", "--port", "8090"]

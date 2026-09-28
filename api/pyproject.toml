@@ -1,0 +1,48 @@
+[project]
+name = "workspace2-api"
+version = "0.1.0"
+description = "Dify-like platform API (PLAN-001 S2)"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115",
+  "uvicorn>=0.30",
+  "sqlalchemy>=2.0",
+  "psycopg[binary]>=3.1",
+  "pydantic[email]>=2.0",
+  "pydantic-settings>=2.0",
+  "pyjwt>=2.8",
+  "pwdlib[argon2]>=0.2",
+  "alembic>=1.13",
+  "httpx>=0.27",
+  "redis>=5.0",
+  "langgraph>=1.2,<2",
+  "pgvector>=0.3",
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.0",
+  "httpx>=0.27",
+  "ruff>=0.6",
+  "mypy>=1.10",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+# B008: FastAPI Depends/require-in-defaults 即官方 idiom，误报故忽略。
+ignore = ["B008"]
+
+[tool.ruff.lint.per-file-ignores]
+# cache.py: redis 不可用时退化内存是既定语义，宽异常为必需。
+"src/services/cache.py" = ["BLE001", "S110"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = false
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

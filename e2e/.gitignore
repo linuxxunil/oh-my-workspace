@@ -1,0 +1,4 @@
+reports/*.png
+reports/*.zip
+dist/
+node_modules/

@@ -1,0 +1,20 @@
+[project]
+name = "workspace2-sandbox"
+version = "0.1.0"
+description = "自建 Python 沙箱服务（PLAN-001 S5）：以本地 python:3.11-slim 为底，仅 Python"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115",
+  "uvicorn>=0.30",
+  "pydantic>=2.0",
+]
+
+[dependency-groups]
+dev = [
+  "httpx>=0.27",
+  "ruff>=0.6",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100

@@ -1,0 +1,39 @@
+{
+  "app": { "skip": "跳到主内容" },
+  "nav": { "workflows": "流程", "models": "模型", "users": "用户" },
+  "auth": {
+    "login": "登录",
+    "logout": "退出",
+    "email": "邮箱",
+    "password": "密码",
+    "submit": "登录",
+    "failed": "登录失败，请检查账号密码"
+  },
+  "users": {
+    "title": "用户管理",
+    "email": "邮箱",
+    "role": "角色",
+    "create": "新增用户",
+    "delete": "删除",
+    "empty": "暂无用户"
+  },
+  "models": {
+    "title": "模型供应商",
+    "name": "名称",
+    "type": "类型",
+    "baseUrl": "地址",
+    "test": "连通性检查",
+    "empty": "暂无供应商"
+  },
+  "flows": {
+    "title": "流程",
+    "new": "新建流程",
+    "open": "打开画布",
+    "run": "运行",
+    "publish": "发布",
+    "save": "保存",
+    "inputs": "输入 JSON",
+    "outputs": "输出",
+    "empty": "暂无流程"
+  }
+}

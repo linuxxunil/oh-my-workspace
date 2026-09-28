@@ -1,0 +1,7 @@
+name: oh-my-workspace2
+
+# 根入口：裸 `docker compose up -d` 直起（无需 -f/--env-file）。
+# service 唯一来源：docker/compose.infra.yml（部署物内聚，不复制定义）。
+# 变量全有内联默认，无 .env 也可起；改端口/密码时 `cp docker/.env.example .env` 再改。
+include:
+  - path: docker/compose.infra.yml

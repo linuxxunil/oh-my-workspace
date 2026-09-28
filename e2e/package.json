@@ -1,0 +1,24 @@
+{
+  "name": "@oh-my-workspace2/e2e",
+  "private": true,
+  "version": "0.1.0",
+  "type": "commonjs",
+  "description": "Cucumber + Playwright 端到端套件（唯一运行时见 scripts/run-cucumber.ts）",
+  "scripts": {
+    "gen": "orval",
+    "e2e": "tsx scripts/run-cucumber.ts",
+    "e2e:full": "tsx scripts/reset.ts && tsx scripts/run-cucumber.ts",
+    "browser:install": "playwright install chromium"
+  },
+  "dependencies": {
+    "@cucumber/cucumber": "^12.2.0",
+    "axios": "^1.12.0",
+    "playwright": "1.63.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "orval": "^7.5.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}

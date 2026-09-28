@@ -1,0 +1,12 @@
+# 发布时构建（确认发布才执行）。底座：本地 node:20-alpine 构建 + nginx:latest 托管。
+FROM node:20-alpine AS build
+WORKDIR /srv/web
+COPY web/package.json web/pnpm-lock.yaml* ./
+RUN npm install -g pnpm && pnpm install --frozen-lockfile || pnpm install
+COPY web/ ./
+RUN pnpm build
+
+FROM nginx:latest
+COPY --from=build /srv/web/dist /usr/share/nginx/html
+COPY docker/nginx/release.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80

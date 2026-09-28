@@ -1,0 +1,9 @@
+{
+  "default": {
+    "paths": ["features/**/*.feature"],
+    "import": ["src/steps/**/*.ts", "src/support/**/*.ts"],
+    "publishQuiet": true,
+    "format": ["progress"],
+    "timeout": 30000
+  }
+}

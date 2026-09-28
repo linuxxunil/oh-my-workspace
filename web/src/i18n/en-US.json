@@ -1,0 +1,39 @@
+{
+  "app": { "skip": "Skip to main content" },
+  "nav": { "workflows": "Workflows", "models": "Models", "users": "Users" },
+  "auth": {
+    "login": "Sign in",
+    "logout": "Sign out",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Sign in",
+    "failed": "Sign-in failed, check your credentials"
+  },
+  "users": {
+    "title": "Users",
+    "email": "Email",
+    "role": "Role",
+    "create": "Create user",
+    "delete": "Delete",
+    "empty": "No users"
+  },
+  "models": {
+    "title": "Model providers",
+    "name": "Name",
+    "type": "Type",
+    "baseUrl": "Base URL",
+    "test": "Test connection",
+    "empty": "No providers"
+  },
+  "flows": {
+    "title": "Workflows",
+    "new": "New workflow",
+    "open": "Open canvas",
+    "run": "Run",
+    "publish": "Publish",
+    "save": "Save",
+    "inputs": "Inputs JSON",
+    "outputs": "Outputs",
+    "empty": "No workflows"
+  }
+}
