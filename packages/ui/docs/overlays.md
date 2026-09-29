@@ -43,4 +43,6 @@
 - `PreviewCard`：链接目标的非交互增强，关键信息不只存在于预览。
 - `Popover`：触屏与无障碍必须可达的解释性、结构化、交互内容。
 
+当前可用共享实现：`DropdownMenu` 与 `Drawer`，分别见 `dropdown-menu.md`、`drawer.md`。尚未落地的 overlay 名称属于语义目录，不代表可直接导入的实现。
+
 触发器用真实 `<button type="button">`；基元负责定位与间距，无文档化例外不覆写。

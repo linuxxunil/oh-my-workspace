@@ -12,8 +12,9 @@ When('在浏览器中以 {string} 用密码 {string} 登录', async function (
 })
 
 When('退出登录', async function (this: AppWorld) {
-  const { logoutViaUI } = await import('../support/nav')
-  await logoutViaUI(this)
+  await this.page.getByRole('button', { name: new RegExp(this.browserEmail) }).click()
+  await this.page.getByRole('menuitem', { name: '退出' }).click()
+  await expect(this.page).toHaveURL(/\/login$/)
 })
 
 When('将用户 {string} 的密码重置为 {string}', async function (
@@ -38,8 +39,9 @@ When('在账号页将密码从 {string} 改为 {string}', async function (
   newPassword: string,
 ) {
   const { page } = this
-  const { gotoSection } = await import('../support/nav')
-  await gotoSection(this, '/account')
+  await page.getByRole('button', { name: new RegExp(this.browserEmail) }).click()
+  await page.getByRole('menuitem', { name: '修改密码' }).click()
+  await expect(page).toHaveURL(/\/account$/)
   await page.getByRole('textbox', { name: '旧密码', exact: true }).fill(oldPassword)
   await page.getByRole('textbox', { name: '新密码', exact: true }).fill(newPassword)
   await page.getByRole('textbox', { name: '确认新密码', exact: true }).fill(newPassword)

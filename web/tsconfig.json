@@ -19,6 +19,7 @@
       "@/packages/ui/selection": ["../packages/ui/src/selection/index.ts"],
       "@/packages/ui/badge": ["../packages/ui/src/badge/index.ts"],
       "@/packages/ui/empty-state": ["../packages/ui/src/empty-state/index.ts"],
+      "@/packages/ui/overlay": ["../packages/ui/src/overlay/index.ts"],
       "@/packages/*": ["../packages/*"],
       "@/*": ["src/*"]
     }

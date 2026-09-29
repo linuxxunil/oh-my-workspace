@@ -1,6 +1,16 @@
 {
   "app": { "skip": "Skip to main content" },
-  "nav": { "workflows": "Workflows", "models": "Models", "users": "Users" },
+  "nav": {
+    "workflows": "Workflows",
+    "models": "Models",
+    "users": "Users",
+    "primary": "Primary navigation",
+    "userActions": "Current user actions",
+    "collapseSidebar": "Collapse sidebar",
+    "expandSidebar": "Expand sidebar",
+    "openNavigation": "Open navigation",
+    "closeNavigation": "Close navigation"
+  },
   "auth": {
     "login": "Sign in",
     "logout": "Sign out",

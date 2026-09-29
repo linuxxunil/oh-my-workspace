@@ -6,7 +6,6 @@ const LINKS = {
   '/workflows': '流程',
   '/models': '模型',
   '/users': '用户',
-  '/account': '账号设置',
 } as const
 export type SectionPath = keyof typeof LINKS
 
@@ -24,13 +23,6 @@ export async function loginAs(world: AppWorld, email: string, password: string):
   await page.getByLabel('密码').fill(password)
   await page.getByRole('button', { name: '登录' }).click()
   await expect(page).toHaveURL(/\/workflows$/)
-}
-
-/** 经 UI 退出（侧栏退出按钮，不重载丢态问题外）。 */
-export async function logoutViaUI(world: AppWorld): Promise<void> {
-  const { page } = world
-  await page.getByRole('button', { name: '退出' }).click()
-  await expect(page).toHaveURL(/\/login$/)
 }
 
 /** 站内导航：点主导航 RouterLink，不整页重载（pinia token 纯内存，重载会掉登录）。
