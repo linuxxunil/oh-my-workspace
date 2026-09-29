@@ -9,6 +9,8 @@ import enUS from './i18n/en-US.json'
 import './styles.css'
 import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
+import '@vue-flow/controls/dist/style.css'
+import '@vue-flow/minimap/dist/style.css'
 
 const i18n = createI18n({
   legacy: false,

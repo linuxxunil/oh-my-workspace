@@ -51,5 +51,22 @@
     "inputs": "输入 JSON",
     "outputs": "输出",
     "empty": "暂无流程"
+  },
+  "canvas": {
+    "code": "代码",
+    "outputKey": "输出键",
+    "prompt": "提示词",
+    "model": "模型",
+    "provider": "供应商",
+    "query": "查询",
+    "topK": "召回数",
+    "varName": "变量",
+    "equals": "等于值",
+    "noConfig": "该节点无需配置",
+    "loadingProviders": "加载供应商中…",
+    "zoomIn": "放大",
+    "zoomOut": "缩小",
+    "fitView": "适应视图",
+    "toggleInteractive": "锁定或解锁交互"
   }
 }

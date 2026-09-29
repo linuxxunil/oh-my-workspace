@@ -51,5 +51,22 @@
     "inputs": "Inputs JSON",
     "outputs": "Outputs",
     "empty": "No workflows"
+  },
+  "canvas": {
+    "code": "Code",
+    "outputKey": "Output key",
+    "prompt": "Prompt",
+    "model": "Model",
+    "provider": "Provider",
+    "query": "Query",
+    "topK": "Top K",
+    "varName": "Variable",
+    "equals": "Equals",
+    "noConfig": "No configuration needed",
+    "loadingProviders": "Loading providers…",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "fitView": "Fit view",
+    "toggleInteractive": "Toggle interactivity"
   }
 }

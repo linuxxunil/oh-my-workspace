@@ -91,11 +91,10 @@ When(
   const codeNode = page.locator('.vue-flow__node[data-id^="code-"]')
   await expect(codeNode).toBeVisible()
 
-  // 配 code 节点：m = n * 2。
+  // 配 code 节点：m = n * 2（类型表单：代码 + 输出键）。
   await selectNode(codeNode)
-  await page
-    .getByRole('textbox', { name: 'config JSON' })
-    .fill(JSON.stringify({ code: 'result = data["n"] * 2', output_key: 'm' }))
+  await page.getByRole('textbox', { name: '代码' }).fill('result = data["n"] * 2')
+  await page.getByRole('textbox', { name: '输出键', exact: true }).fill('m')
   await page.getByRole('button', { name: '保存配置' }).click()
   await expect(page.getByRole('status')).toHaveText('ok')
 
