@@ -12,7 +12,16 @@
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "types": ["vite/client"],
     "baseUrl": ".",
-    "paths": { "@/*": ["src/*"] }
+    "paths": {
+      "@/packages/ui/button": ["../packages/ui/src/button/index.ts"],
+      "@/packages/ui/form": ["../packages/ui/src/form/index.ts"],
+      "@/packages/ui/input": ["../packages/ui/src/input/index.ts"],
+      "@/packages/ui/selection": ["../packages/ui/src/selection/index.ts"],
+      "@/packages/ui/badge": ["../packages/ui/src/badge/index.ts"],
+      "@/packages/ui/empty-state": ["../packages/ui/src/empty-state/index.ts"],
+      "@/packages/*": ["../packages/*"],
+      "@/*": ["src/*"]
+    }
   },
-  "include": ["src/**/*.ts", "src/**/*.vue", "vite.config.ts", "orval.config.ts", "vitest.config.ts"]
+  "include": ["src/**/*.ts", "src/**/*.vue", "../packages/ui/src/**/*.ts", "../packages/ui/src/**/*.vue", "vite.config.ts", "orval.config.ts", "vitest.config.ts"]
 }

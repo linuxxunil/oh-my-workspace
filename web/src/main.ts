@@ -6,6 +6,7 @@ import App from './App.vue'
 import { router } from './router'
 import zhCN from './i18n/zh-CN.json'
 import enUS from './i18n/en-US.json'
+import './styles.css'
 import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
 

@@ -1,0 +1,22 @@
+{
+  "name": "@workspace2/ui",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "共享 Vue 基元库（契约见 docs/，实现见 src/，一基元一目录）",
+  "scripts": {
+    "test": "vitest run",
+    "check": "vue-tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "@vue/test-utils": "^2.5.1",
+    "happy-dom": "^20.14.5",
+    "typescript": "^5.7.2",
+    "vitest": "^3.0.4",
+    "vue-tsc": "^2.2.0"
+  }
+}

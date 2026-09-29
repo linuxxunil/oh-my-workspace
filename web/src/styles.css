@@ -1,0 +1,13 @@
+/* 消费者根样式：先 Tailwind，再本包样式入口（见 packages/ui/docs/styling.md）。
+ * 注：tailwind 自带@import 解析器不走 vite 别名，此处必须相对路径。 */
+@import 'tailwindcss';
+@import '../../packages/ui/styles.css';
+
+/* 工作区直接扫描基元源码（路径相对本文件）。 */
+@source '../../packages/ui/src';
+
+@layer base {
+  body {
+    @apply bg-surface text-slate-800 antialiased;
+  }
+}

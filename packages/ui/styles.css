@@ -1,0 +1,13 @@
+/* packages/ui 样式入口：tokens 与基元共享样式。
+ * 由消费者在 `@import 'tailwindcss'` 之后引入（见 web/src/styles.css），本文件不自引 tailwind。 */
+
+@theme {
+  /* Dify 式浅色底（REQ-003）：页面底，卡片纯白，边框 slate-200，主色 indigo-600。 */
+  --color-surface: #f4f6fb;
+}
+
+@layer base {
+  ::selection {
+    background-color: var(--color-indigo-200);
+  }
+}

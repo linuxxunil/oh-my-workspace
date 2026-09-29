@@ -1,4 +1,4 @@
-.PHONY: lint type-check test infra-up infra-ps web-check web-test web-build openapi openapi-check spike-opencode-go dev-api dev-sandbox
+.PHONY: lint type-check test infra-up infra-ps web-check web-test web-build ui-test ui-check openapi openapi-check spike-opencode-go dev-api dev-sandbox
 
 lint:
 	PYTHONPATH=api uv run --project api ruff check api
@@ -20,6 +20,12 @@ web-test:
 
 web-build:
 	pnpm --dir web build
+
+ui-test:
+	pnpm --dir packages/ui test
+
+ui-check:
+	pnpm --dir packages/ui check
 
 openapi:
 	PYTHONPATH=api uv run --project api python -c "import json; from src.main import app; open('web/openapi.json','w').write(json.dumps(app.openapi(), ensure_ascii=False, indent=2))"
