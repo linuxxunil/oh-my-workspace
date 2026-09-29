@@ -177,3 +177,66 @@ def test_delete_provider_bound_by_latest_version_returns_409(client):
     assert r.status_code == 409, r.text
     assert "w-bound" in r.json()["detail"]
     assert any(p["id"] == pid for p in client.get("/models/providers", headers=root).json())
+
+
+def test_extra_headers_validation_and_passthrough(client, monkeypatch):
+    import src.services.provider_service as svc
+
+    root = auth_headers(login(client, "super_admin"))
+
+    def _mk(name, headers=None):
+        payload = {
+            "type": "openai_compatible",
+            "name": name,
+            "base_url": "https://h.example.com/v1",
+        }
+        if headers is not None:
+            payload["extra_headers"] = headers
+        return client.post("/models/providers", headers=root, json=payload)
+
+    # 禁止覆盖 Authorization（大小写不敏感）→ 400
+    for bad in ("Authorization", "authorization", "AUTHORIZATION"):
+        r = _mk(f"h-bad-{bad}", {bad: "x"})
+        assert r.status_code == 400, r.text
+    # 非法键名 / 超长值 / 超条数 → 400
+    r = _mk("h-bad-name", {"Bad Header!": "x"})
+    assert r.status_code == 400, r.text
+    r = _mk("h-bad-val", {"X-Ok": "v" * 1025})
+    assert r.status_code == 400, r.text
+    r = _mk("h-bad-many", {f"X-H-{i}": "v" for i in range(21)})
+    assert r.status_code == 400, r.text
+    # 合法头：建 201（Response 只收不返，无 extra_headers 字段）
+    r = _mk("h-ok", {"X-Custom": "abc", "X-Api-Key": "k2"})
+    assert r.status_code == 201, r.text
+    assert "extra_headers" not in r.json()
+    pid = r.json()["id"]
+    # 透传：发出 headers 含自定义头且 Authorization 仍为 Bearer
+    seen: list[dict] = []
+
+    def _fake(url: str, headers: dict, timeout_s: float = 10.0):
+        seen.append(dict(headers))
+        return _fake_models(httpx.Request("GET", url))
+
+    monkeypatch.setattr(svc, "_http_get", _fake)
+    r = client.post(f"/models/providers/{pid}/test", headers=root)
+    assert r.json()["ok"] is True
+    assert seen[-1]["X-Custom"] == "abc"
+    assert seen[-1]["X-Api-Key"] == "k2"
+    assert seen[-1].get("Authorization", "") == ""
+    # PATCH 整体替换：旧头消失；空（None）= 保持
+    r = client.patch(f"/models/providers/{pid}", headers=root, json={"extra_headers": {"X-New": "n"}})
+    assert r.status_code == 200, r.text
+    client.post(f"/models/providers/{pid}/test", headers=root)
+    assert seen[-1].get("X-Custom") is None
+    assert seen[-1]["X-New"] == "n"
+    r = client.patch(f"/models/providers/{pid}", headers=root, json={"name": "h-ok-2"})
+    assert r.status_code == 200, r.text
+    client.post(f"/models/providers/{pid}/test", headers=root)
+    assert seen[-1]["X-New"] == "n"
+    # PATCH 非法头 → 400 且旧头保持
+    r = client.patch(
+        f"/models/providers/{pid}", headers=root, json={"extra_headers": {"Authorization": "x"}}
+    )
+    assert r.status_code == 400, r.text
+    client.post(f"/models/providers/{pid}/test", headers=root)
+    assert seen[-1]["X-New"] == "n"

@@ -4,6 +4,8 @@ wire 结论（PLAN-001 R1 spike）：opencode-go 暂无公开原生协议文档�
 spike 脚手架见 api/scripts/spike_opencode_go.py（PLAN-002 S2，只读探测，无凭证时结论为 downgrade）。
 """
 
+import re
+
 import httpx
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
@@ -39,6 +41,25 @@ def _chat_url(p: ModelProvider) -> str:
     return p.base_url.rstrip("/") + "/chat/completions"
 
 
+_HEADER_NAME_RE = re.compile(r"^[A-Za-z0-9-]+$")
+_MAX_EXTRA_HEADERS = 20
+_MAX_HEADER_VALUE_LEN = 1024
+
+
+def _check_extra_headers(headers: dict) -> None:
+    """校验自定义头；非法抛 ValueError（controller 译 400）。
+    禁止覆盖 Authorization（大小写不敏感），防 Bearer 被顶掉。"""
+    if len(headers) > _MAX_EXTRA_HEADERS:
+        raise ValueError(f"自定义头最多 {_MAX_EXTRA_HEADERS} 条")
+    for k, v in headers.items():
+        if not isinstance(k, str) or not _HEADER_NAME_RE.match(k):
+            raise ValueError(f"非法头名：{k}")
+        if k.lower() == "authorization":
+            raise ValueError("不允许覆盖 Authorization 头")
+        if not isinstance(v, str) or len(v) > _MAX_HEADER_VALUE_LEN:
+            raise ValueError(f"头值非法或过长：{k}")
+
+
 def list_providers(db: Session, *, tenant_id: str) -> list[ModelProvider]:
     return (
         db.query(ModelProvider)
@@ -59,6 +80,7 @@ def create_provider(
     extra_headers: dict | None = None,
 ) -> ModelProvider:
     assert_safe_url(base_url)
+    _check_extra_headers(extra_headers or {})
     exists = (
         db.query(ModelProvider)
         .filter(ModelProvider.tenant_id == tenant_id, ModelProvider.name == name)
@@ -149,6 +171,7 @@ def update_provider(
     if api_key:
         p.api_key = api_key
     if extra_headers is not None:
+        _check_extra_headers(extra_headers)
         p.extra_headers = extra_headers
     db.commit()
     db.refresh(p)

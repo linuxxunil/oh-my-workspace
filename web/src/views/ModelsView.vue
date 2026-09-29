@@ -65,6 +65,38 @@
               />
             </template>
           </Field>
+          <fieldset class="flex flex-col gap-2">
+            <legend class="text-sm font-medium text-slate-700">{{ t('models.headers') }}</legend>
+            <p class="text-xs text-slate-500">{{ t('models.headersHintEdit') }}</p>
+            <div
+              v-for="(row, i) in editHeaders"
+              :key="i"
+              class="flex items-center gap-2"
+            >
+              <TextInput
+                :id="`ep-hk-${p.id}-${i}`"
+                v-model="row.k"
+                :placeholder="t('models.headerKey')"
+                :aria-label="t('models.headerKey')"
+              />
+              <TextInput
+                :id="`ep-hv-${p.id}-${i}`"
+                v-model="row.v"
+                type="password"
+                autocomplete="new-password"
+                :placeholder="t('models.headerValue')"
+                :aria-label="t('models.headerValue')"
+              />
+              <Button variant="secondary" size="sm" @click="editHeaders.splice(i, 1)">
+                {{ t('models.headerRemove') }}
+              </Button>
+            </div>
+            <div>
+              <Button variant="secondary" size="sm" @click="editHeaders.push({ k: '', v: '' })">
+                {{ t('models.headerAdd') }}
+              </Button>
+            </div>
+          </fieldset>
           <div>
             <Button type="submit" variant="primary" size="sm" :loading="saving">
               {{ t('models.save') }}
@@ -103,6 +135,34 @@
           />
         </template>
       </Field>
+      <fieldset class="flex flex-col gap-2">
+        <legend class="text-sm font-medium text-slate-700">{{ t('models.headers') }}</legend>
+        <p class="text-xs text-slate-500">{{ t('models.headersHintCreate') }}</p>
+        <div v-for="(row, i) in headers" :key="i" class="flex items-center gap-2">
+          <TextInput
+            :id="`np-hk-${i}`"
+            v-model="row.k"
+            :placeholder="t('models.headerKey')"
+            :aria-label="t('models.headerKey')"
+          />
+          <TextInput
+            :id="`np-hv-${i}`"
+            v-model="row.v"
+            type="password"
+            autocomplete="new-password"
+            :placeholder="t('models.headerValue')"
+            :aria-label="t('models.headerValue')"
+          />
+          <Button variant="secondary" size="sm" @click="headers.splice(i, 1)">
+            {{ t('models.headerRemove') }}
+          </Button>
+        </div>
+        <div>
+          <Button variant="secondary" size="sm" @click="headers.push({ k: '', v: '' })">
+            {{ t('models.headerAdd') }}
+          </Button>
+        </div>
+      </fieldset>
       <div>
         <Button type="submit" variant="primary">{{ t('models.title') }}</Button>
       </div>
@@ -142,9 +202,26 @@ const typeOptions = [
   { value: 'openai_compatible', label: 'openai_compatible' },
   { value: 'opencode_go', label: 'opencode_go' },
 ]
-// 按类型出字段表（首批两通道同形：名称/地址/API Key；extra_headers 二期再开）。
+// 按类型出字段表（首批两通道同形：名称/地址/API Key/自定义头；头只收不返）。
 const baseUrl = ref('')
 const apiKey = ref('')
+interface HeaderRow {
+  k: string
+  v: string
+}
+const headers = ref<HeaderRow[]>([])
+const editHeaders = ref<HeaderRow[]>([])
+
+/** KV 行 → 对象；空行忽略，全空返回 undefined（新建=不带，编辑=保持）。 */
+function headersObject(rows: HeaderRow[]): Record<string, string> | undefined {
+  const o: Record<string, string> = {}
+  for (const r of rows) {
+    const k = r.k.trim()
+    if (!k) continue
+    o[k] = r.v
+  }
+  return Object.keys(o).length > 0 ? o : undefined
+}
 const results = reactive<Record<string, string>>({})
 const rowErrors = reactive<Record<string, string>>({})
 const editingId = ref<string | null>(null)
@@ -155,11 +232,18 @@ const saving = computed(() => updateMut.isPending.value === true)
 
 async function create() {
   await createMut.mutateAsync({
-    data: { type: ptype.value, name: name.value, base_url: baseUrl.value, api_key: apiKey.value },
+    data: {
+      type: ptype.value,
+      name: name.value,
+      base_url: baseUrl.value,
+      api_key: apiKey.value,
+      extra_headers: headersObject(headers.value),
+    },
   })
   name.value = ''
   baseUrl.value = ''
   apiKey.value = ''
+  headers.value = []
   await qc.invalidateQueries()
 }
 
@@ -187,6 +271,7 @@ async function remove(id: string, name: string) {
 function toggleEdit(id: string) {
   if (editingId.value === id) {
     editingId.value = null
+    editHeaders.value = []
     return
   }
   const p = providers.value.find((x) => x.id === id)
@@ -194,14 +279,22 @@ function toggleEdit(id: string) {
   editName.value = p?.name ?? ''
   editUrl.value = p?.base_url ?? ''
   editKey.value = ''
+  // 头只收不返，无法回显：从空开始，留空提交=保持。
+  editHeaders.value = []
 }
 
 async function save(id: string) {
   await updateMut.mutateAsync({
     providerId: id,
-    data: { name: editName.value, base_url: editUrl.value, api_key: editKey.value },
+    data: {
+      name: editName.value,
+      base_url: editUrl.value,
+      api_key: editKey.value,
+      extra_headers: headersObject(editHeaders.value),
+    },
   })
   editingId.value = null
+  editHeaders.value = []
   await qc.invalidateQueries()
 }
 </script>

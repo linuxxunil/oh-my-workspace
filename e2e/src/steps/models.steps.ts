@@ -7,41 +7,86 @@ When(
   '新建供应商 类型 {string} 名称以 {string} 为前缀 地址 {string}',
   async function (this: AppWorld, type: string, prefix: string, url: string) {
     void prefix
-    const name = e2eName('provider')
-    const { page } = this
-    const { gotoSection } = await import('../support/nav')
-    await gotoSection(this, '/models')
-    try {
-      await page.getByRole('textbox', { name: '名称' }).fill(name)
-      await page.getByRole('combobox', { name: '类型' }).selectOption(type)
-      await page.getByRole('textbox', { name: '地址' }).fill(url)
-      await page.getByRole('button', { name: '模型供应商' }).click()
-      await expect(page.locator('li', { hasText: name })).toBeVisible()
-    } catch (e) {
-      // 建了一半不能留孤儿，按名清掉再抛原错。
-      const { deleteProvider, findProviderByName } = await import('../support/api')
-      await findProviderByName(name)
-        .then((id) => (id ? deleteProvider(id) : undefined))
-        .catch(() => undefined)
-      throw e
-    }
-    this.currentProviderName = name
-
-    const { findProviderByName } = await import('../support/api')
-    const id = await findProviderByName(name)
-    if (id) {
-      this.currentProviderId = id
-      this.providerIds.push(id)
-      this.registerCleanup(async () => {
-        const { deleteProvider } = await import('../support/api')
-        await deleteProvider(id)
-      })
-    }
+    await createProviderViaForm(this, type, url)
   },
 )
 
+When(
+  '新建供应商 类型 {string} 名称以 {string} 为前缀 地址 {string} 附带自定义头 {string} 值为 {string}',
+  async function (
+    this: AppWorld,
+    type: string,
+    prefix: string,
+    url: string,
+    headerName: string,
+    headerValue: string,
+  ) {
+    void prefix
+    await createProviderViaForm(this, type, url, [[headerName, headerValue]])
+  },
+)
+
+/** 浏览器建供应商（被测动作）；headers 经 KV 行编辑器填入。 */
+async function createProviderViaForm(
+  world: AppWorld,
+  type: string,
+  url: string,
+  headers: [string, string][] = [],
+) {
+  const name = e2eName('provider')
+  const { page } = world
+  const { gotoSection } = await import('../support/nav')
+  await gotoSection(world, '/models')
+  try {
+    await page.getByRole('textbox', { name: '名称' }).fill(name)
+    await page.getByRole('combobox', { name: '类型' }).selectOption(type)
+    await page.getByRole('textbox', { name: '地址' }).fill(url)
+    for (const [k, v] of headers) {
+      await page.getByRole('button', { name: '加一行' }).click()
+      const keyBoxes = page.getByRole('textbox', { name: '头名' })
+      const valBoxes = page.getByRole('textbox', { name: '头值' })
+      await keyBoxes.last().fill(k)
+      await valBoxes.last().fill(v)
+    }
+    await page.getByRole('button', { name: '模型供应商' }).click()
+    await expect(page.locator('li', { hasText: name })).toBeVisible()
+  } catch (e) {
+    // 建了一半不能留孤儿，按名清掉再抛原错。
+    const { deleteProvider, findProviderByName } = await import('../support/api')
+    await findProviderByName(name)
+      .then((id) => (id ? deleteProvider(id) : undefined))
+      .catch(() => undefined)
+    throw e
+  }
+  world.currentProviderName = name
+
+  const { findProviderByName } = await import('../support/api')
+  const id = await findProviderByName(name)
+  if (id) {
+    world.currentProviderId = id
+    world.providerIds.push(id)
+    world.registerCleanup(async () => {
+      const { deleteProvider } = await import('../support/api')
+      await deleteProvider(id)
+    })
+  }
+}
+
 Then('供应商出现在列表中', async function (this: AppWorld) {
   await expect(this.page.locator('li', { hasText: this.currentProviderName })).toBeVisible()
+})
+
+When('打开该供应商的编辑', async function (this: AppWorld) {
+  await this.page
+    .locator('li', { hasText: this.currentProviderName })
+    .getByRole('button', { name: '编辑' })
+    .click()
+})
+
+Then('编辑表单不回显自定义头', async function (this: AppWorld) {
+  // 头只收不返：打开编辑时无 KV 行。
+  const row = this.page.locator('li', { hasText: this.currentProviderName })
+  await expect(row.getByRole('textbox', { name: '头名' })).toHaveCount(0)
 })
 
 When('打开该供应商的编辑并更换 API Key 为 {string}', async function (
