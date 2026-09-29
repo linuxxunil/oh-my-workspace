@@ -26,6 +26,16 @@ docker build -f docker/Dockerfile.web.release -t workspace2-web:<ver> .
 docker build -f docker/Dockerfile.sandbox.release -t workspace2-sandbox:<ver> .
 ```
 
+## DB 迁移（发布启动前必跑，REQ-011 落地）
+
+```bash
+API_DATABASE_URL=<生产库> PYTHONPATH=api uv run --project api alembic -c api/alembic.ini upgrade head
+```
+
+- 从仓根（含 `api/alembic/`）执行；`API_AUTO_MIGRATE=1` 的本地直跑会在 lifespan 内自动 upgrade（`api/src/main.py`），发布镜像内无迁移文件故必须显式跑上面这条。
+- 旧库（有表、无 `alembic_version`）：先 `alembic -c api/alembic.ini stamp head` 一次，再 `upgrade head` 即空操作。
+- 回滚：`alembic -c api/alembic.ini downgrade -1`（基线 `downgrade base` 会删全表，生产禁用）。
+
 沙箱跑时隔离（强制）：
 
 ```bash
@@ -40,4 +50,4 @@ pnpm -C e2e e2e -- --tags @smoke   # runner 按 e2e/AGENTS.md 落地后执行；
 
 ## 已知后续（二期，不属 REQ-001）
 
-- alembic 正式迁移（现为 `API_AUTO_MIGRATE` dev 自举）、api_key KMS 加密、opencode-go 原生协议、Vector 原生检索下推、e2e runner 落地。
+- api_key KMS 加密、opencode-go 原生协议、Vector 原生检索下推、e2e runner 落地。
