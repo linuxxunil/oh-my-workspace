@@ -84,6 +84,39 @@ def delete_provider(db: Session, *, tenant_id: str, provider_id: str) -> None:
     db.commit()
 
 
+def update_provider(
+    db: Session,
+    *,
+    tenant_id: str,
+    provider_id: str,
+    name: str | None = None,
+    base_url: str | None = None,
+    api_key: str | None = None,
+    extra_headers: dict | None = None,
+) -> ModelProvider:
+    """改供应商；api_key 空（None/''）= 保持（Key 只收不返，无法回显确认）。"""
+    p = _get(db, tenant_id=tenant_id, provider_id=provider_id)
+    if name is not None and name != p.name:
+        exists = (
+            db.query(ModelProvider)
+            .filter(ModelProvider.tenant_id == tenant_id, ModelProvider.name == name)
+            .first()
+        )
+        if exists is not None:
+            raise Conflict("同名供应商已存在")
+        p.name = name
+    if base_url is not None:
+        assert_safe_url(base_url)
+        p.base_url = base_url.rstrip("/")
+    if api_key:
+        p.api_key = api_key
+    if extra_headers is not None:
+        p.extra_headers = extra_headers
+    db.commit()
+    db.refresh(p)
+    return p
+
+
 def fetch_models(db: Session, *, tenant_id: str, provider_id: str) -> list[str]:
     """模型列表（redis 缓存 5 分钟）；两通道同 wire，opencode_go 失败时回退空列表不抛错。"""
     p = _get(db, tenant_id=tenant_id, provider_id=provider_id)

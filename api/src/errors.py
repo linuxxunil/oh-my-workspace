@@ -17,5 +17,9 @@ class Unauthorized(DomainError):
     pass
 
 
+class BadRequest(DomainError):
+    """请求语义错（旧密码不符等），controller 译 400。"""
+
+
 class Conflict(DomainError):
     pass

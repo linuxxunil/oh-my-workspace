@@ -44,6 +44,18 @@ Then('供应商出现在列表中', async function (this: AppWorld) {
   await expect(this.page.locator('li', { hasText: this.currentProviderName })).toBeVisible()
 })
 
+When('打开该供应商的编辑并更换 API Key 为 {string}', async function (
+  this: AppWorld,
+  apiKey: string,
+) {
+  const row = this.page.locator('li', { hasText: this.currentProviderName })
+  await row.getByRole('button', { name: '编辑' }).click()
+  await row.getByRole('textbox', { name: 'API Key' }).fill(apiKey)
+  await row.getByRole('button', { name: '保存' }).click()
+  // 编辑表单收起即保存成功。
+  await expect(row.getByRole('button', { name: '编辑' })).toBeVisible()
+})
+
 When('对该供应商执行连通性检查', async function (this: AppWorld) {
   await this.page
     .locator('li', { hasText: this.currentProviderName })

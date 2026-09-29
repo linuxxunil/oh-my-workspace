@@ -78,6 +78,13 @@ export interface MeResponse {
   role: Role;
 }
 
+export interface PasswordChangeRequest {
+  /** @minLength 1 */
+  old_password: string;
+  /** @minLength 8 */
+  new_password: string;
+}
+
 export interface PermissionResponse {
   code: string;
   description: string;
@@ -123,6 +130,23 @@ export const ProviderType = {
   openai_compatible: 'openai_compatible',
   opencode_go: 'opencode_go',
 } as const;
+
+export type ProviderUpdateRequestName = string | null;
+
+export type ProviderUpdateRequestBaseUrl = string | null;
+
+export type ProviderUpdateRequestApiKey = string | null;
+
+export type ProviderUpdateRequestExtraHeadersAnyOf = {[key: string]: string};
+
+export type ProviderUpdateRequestExtraHeaders = ProviderUpdateRequestExtraHeadersAnyOf | null;
+
+export interface ProviderUpdateRequest {
+  name?: ProviderUpdateRequestName;
+  base_url?: ProviderUpdateRequestBaseUrl;
+  api_key?: ProviderUpdateRequestApiKey;
+  extra_headers?: ProviderUpdateRequestExtraHeaders;
+}
 
 export type Role = typeof Role[keyof typeof Role];
 
@@ -286,6 +310,21 @@ const meAuthMeGet = (
     }
   
 /**
+ * 本人自改密码：仅需登录（authn-only，无新权限码），验旧密码。
+ * @summary Change Password
+ */
+const changePasswordAuthPasswordPost = (
+    passwordChangeRequest: PasswordChangeRequest,
+ ) => {
+      return apiMutator<void>(
+      {url: `/api/auth/password`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: passwordChangeRequest
+    },
+      );
+    }
+  
+/**
  * @summary List Users
  */
 const listUsersUsersGet = (
@@ -399,6 +438,21 @@ const createProviderModelsProvidersPost = (
       {url: `/api/models/providers`, method: 'POST',
       headers: {'Content-Type': 'application/json', },
       data: providerCreateRequest
+    },
+      );
+    }
+  
+/**
+ * @summary Update Provider
+ */
+const updateProviderModelsProvidersProviderIdPatch = (
+    providerId: string,
+    providerUpdateRequest: ProviderUpdateRequest,
+ ) => {
+      return apiMutator<ProviderResponse>(
+      {url: `/api/models/providers/${providerId}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: providerUpdateRequest
     },
       );
     }
@@ -569,10 +623,11 @@ const healthHealthGet = (
       );
     }
   
-return {systemFeaturesSystemFeaturesGet,loginAuthLoginPost,meAuthMeGet,listUsersUsersGet,createUserUsersPost,updateUserUsersUserIdPatch,deleteUserUsersUserIdDelete,listPermissionsPermissionsGet,getRolePermissionsRolesRolePermissionsGet,updateRolePermissionsRolesRolePermissionsPut,listProvidersModelsProvidersGet,createProviderModelsProvidersPost,deleteProviderModelsProvidersProviderIdDelete,fetchModelsModelsProvidersProviderIdModelsGet,testConnectionModelsProvidersProviderIdTestPost,listWorkflowsWorkflowsGet,createWorkflowWorkflowsPost,deleteWorkflowWorkflowsWorkflowIdDelete,latestVersionWorkflowsWorkflowIdVersionsLatestGet,publishWorkflowsWorkflowIdPublishPost,newVersionWorkflowsWorkflowIdVersionsPost,runWorkflowWorkflowsWorkflowIdRunPost,listRunsWorkflowsWorkflowIdRunsGet,createDocumentDocumentsPost,healthHealthGet}};
+return {systemFeaturesSystemFeaturesGet,loginAuthLoginPost,meAuthMeGet,changePasswordAuthPasswordPost,listUsersUsersGet,createUserUsersPost,updateUserUsersUserIdPatch,deleteUserUsersUserIdDelete,listPermissionsPermissionsGet,getRolePermissionsRolesRolePermissionsGet,updateRolePermissionsRolesRolePermissionsPut,listProvidersModelsProvidersGet,createProviderModelsProvidersPost,updateProviderModelsProvidersProviderIdPatch,deleteProviderModelsProvidersProviderIdDelete,fetchModelsModelsProvidersProviderIdModelsGet,testConnectionModelsProvidersProviderIdTestPost,listWorkflowsWorkflowsGet,createWorkflowWorkflowsPost,deleteWorkflowWorkflowsWorkflowIdDelete,latestVersionWorkflowsWorkflowIdVersionsLatestGet,publishWorkflowsWorkflowIdPublishPost,newVersionWorkflowsWorkflowIdVersionsPost,runWorkflowWorkflowsWorkflowIdRunPost,listRunsWorkflowsWorkflowIdRunsGet,createDocumentDocumentsPost,healthHealthGet}};
 export type SystemFeaturesSystemFeaturesGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getWorkspace2Api>['systemFeaturesSystemFeaturesGet']>>>
 export type LoginAuthLoginPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getWorkspace2Api>['loginAuthLoginPost']>>>
 export type MeAuthMeGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getWorkspace2Api>['meAuthMeGet']>>>
+export type ChangePasswordAuthPasswordPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getWorkspace2Api>['changePasswordAuthPasswordPost']>>>
 export type ListUsersUsersGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getWorkspace2Api>['listUsersUsersGet']>>>
 export type CreateUserUsersPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getWorkspace2Api>['createUserUsersPost']>>>
 export type UpdateUserUsersUserIdPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getWorkspace2Api>['updateUserUsersUserIdPatch']>>>
@@ -582,6 +637,7 @@ export type GetRolePermissionsRolesRolePermissionsGetResult = NonNullable<Awaite
 export type UpdateRolePermissionsRolesRolePermissionsPutResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getWorkspace2Api>['updateRolePermissionsRolesRolePermissionsPut']>>>
 export type ListProvidersModelsProvidersGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getWorkspace2Api>['listProvidersModelsProvidersGet']>>>
 export type CreateProviderModelsProvidersPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getWorkspace2Api>['createProviderModelsProvidersPost']>>>
+export type UpdateProviderModelsProvidersProviderIdPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getWorkspace2Api>['updateProviderModelsProvidersProviderIdPatch']>>>
 export type DeleteProviderModelsProvidersProviderIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getWorkspace2Api>['deleteProviderModelsProvidersProviderIdDelete']>>>
 export type FetchModelsModelsProvidersProviderIdModelsGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getWorkspace2Api>['fetchModelsModelsProvidersProviderIdModelsGet']>>>
 export type TestConnectionModelsProvidersProviderIdTestPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getWorkspace2Api>['testConnectionModelsProvidersProviderIdTestPost']>>>

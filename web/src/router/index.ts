@@ -30,6 +30,12 @@ export const router = createRouter({
       component: () => import('../views/UsersView.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/account',
+      name: 'account',
+      component: () => import('../views/AccountView.vue'),
+      meta: { requiresAuth: true },
+    },
   ],
 })
 

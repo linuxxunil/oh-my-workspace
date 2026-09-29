@@ -15,15 +15,31 @@
     "role": "Role",
     "create": "Create user",
     "delete": "Delete",
-    "empty": "No users"
+    "empty": "No users",
+    "resetPassword": "Reset password",
+    "newPassword": "New password"
   },
   "models": {
     "title": "Model providers",
     "name": "Name",
     "type": "Type",
     "baseUrl": "Base URL",
+    "apiKey": "API Key",
+    "apiKeyHint": "Empty = unset; empty on edit = keep current",
     "test": "Test connection",
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel",
     "empty": "No providers"
+  },
+  "account": {
+    "title": "Account",
+    "change": "Change password",
+    "oldPassword": "Current password",
+    "newPassword": "New password",
+    "confirm": "Confirm new password",
+    "mismatch": "New passwords do not match",
+    "done": "Password updated"
   },
   "flows": {
     "title": "Workflows",

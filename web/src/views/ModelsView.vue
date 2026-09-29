@@ -7,15 +7,60 @@
       <li
         v-for="p in providers"
         :key="p.id"
-        class="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl bg-white px-4 py-3 ring-1 ring-inset ring-slate-200"
+        class="flex flex-col gap-2 rounded-xl bg-white px-4 py-3 ring-1 ring-inset ring-slate-200"
       >
-        <p class="min-w-0 flex-1 text-sm font-medium text-slate-800">{{ p.name }}</p>
-        <Badge :tone="p.type === 'opencode_go' ? 'indigo' : 'sky'">{{ p.type }}</Badge>
-        <p class="w-full truncate text-xs text-slate-500">{{ p.base_url }}</p>
-        <Button variant="secondary" size="sm" @click="test(p.id)">{{ t('models.test') }}</Button>
-        <span v-if="results[p.id]" class="text-xs font-medium" :class="results[p.id]?.startsWith('ok') ? 'text-green-700' : 'text-red-700'">
-          {{ results[p.id] }}
-        </span>
+        <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <p class="min-w-0 flex-1 text-sm font-medium text-slate-800">{{ p.name }}</p>
+          <Badge :tone="p.type === 'opencode_go' ? 'indigo' : 'sky'">{{ p.type }}</Badge>
+          <Button variant="secondary" size="sm" @click="toggleEdit(p.id)">
+            {{ editingId === p.id ? t('models.cancel') : t('models.edit') }}
+          </Button>
+          <Button variant="secondary" size="sm" @click="test(p.id)">{{ t('models.test') }}</Button>
+          <span
+            v-if="results[p.id]"
+            class="text-xs font-medium"
+            :class="results[p.id]?.startsWith('ok') ? 'text-green-700' : 'text-red-700'"
+          >
+            {{ results[p.id] }}
+          </span>
+        </div>
+        <p class="truncate text-xs text-slate-500">{{ p.base_url }}</p>
+        <form
+          v-if="editingId === p.id"
+          class="flex flex-col gap-3 border-t border-slate-100 pt-3"
+          @submit.prevent="save(p.id)"
+        >
+          <Field :input-id="`ep-name-${p.id}`" :label="t('models.name')">
+            <template #default="{ inputId }">
+              <TextInput :id="inputId" v-model="editName" required />
+            </template>
+          </Field>
+          <Field :input-id="`ep-url-${p.id}`" :label="t('models.baseUrl')">
+            <template #default="{ inputId }">
+              <TextInput :id="inputId" v-model="editUrl" type="url" required />
+            </template>
+          </Field>
+          <Field
+            :input-id="`ep-key-${p.id}`"
+            :label="t('models.apiKey')"
+            :hint="t('models.apiKeyHint')"
+          >
+            <template #default="{ inputId }">
+              <TextInput
+                :id="inputId"
+                v-model="editKey"
+                type="password"
+                autocomplete="new-password"
+                placeholder="••••••••"
+              />
+            </template>
+          </Field>
+          <div>
+            <Button type="submit" variant="primary" size="sm" :loading="saving">
+              {{ t('models.save') }}
+            </Button>
+          </div>
+        </form>
       </li>
     </ul>
     <form
@@ -35,6 +80,17 @@
       <Field input-id="np-url" :label="t('models.baseUrl')">
         <template #default="{ inputId }">
           <TextInput :id="inputId" v-model="baseUrl" type="url" required placeholder="https://…" />
+        </template>
+      </Field>
+      <Field input-id="np-key" :label="t('models.apiKey')" :hint="t('models.apiKeyHint')">
+        <template #default="{ inputId }">
+          <TextInput
+            :id="inputId"
+            v-model="apiKey"
+            type="password"
+            autocomplete="new-password"
+            placeholder="sk-…"
+          />
         </template>
       </Field>
       <div>
@@ -58,6 +114,7 @@ import {
   testConnectionModelsProvidersProviderIdTestPost,
   useCreateProviderModelsProvidersPost,
   useListProvidersModelsProvidersGet,
+  useUpdateProviderModelsProvidersProviderIdPatch,
   type ProviderResponse,
 } from '../service/generated/api'
 
@@ -66,26 +123,56 @@ const qc = useQueryClient()
 const providersQuery = useListProvidersModelsProvidersGet()
 const providers = computed<ProviderResponse[]>(() => providersQuery.data.value ?? [])
 const createMut = useCreateProviderModelsProvidersPost()
+const updateMut = useUpdateProviderModelsProvidersProviderIdPatch()
 const name = ref('')
 const ptype = ref<'openai_compatible' | 'opencode_go'>('openai_compatible')
 const typeOptions = [
   { value: 'openai_compatible', label: 'openai_compatible' },
   { value: 'opencode_go', label: 'opencode_go' },
 ]
+// 按类型出字段表（首批两通道同形：名称/地址/API Key；extra_headers 二期再开）。
 const baseUrl = ref('')
+const apiKey = ref('')
 const results = reactive<Record<string, string>>({})
+const editingId = ref<string | null>(null)
+const editName = ref('')
+const editUrl = ref('')
+const editKey = ref('')
+const saving = computed(() => updateMut.isPending.value === true)
 
 async function create() {
   await createMut.mutateAsync({
-    data: { type: ptype.value, name: name.value, base_url: baseUrl.value },
+    data: { type: ptype.value, name: name.value, base_url: baseUrl.value, api_key: apiKey.value },
   })
   name.value = ''
   baseUrl.value = ''
+  apiKey.value = ''
   await qc.invalidateQueries()
 }
 
 async function test(id: string) {
   const r = await testConnectionModelsProvidersProviderIdTestPost(id)
   results[id] = r.ok ? `ok(${String(r.model_count)})` : 'fail'
+}
+
+function toggleEdit(id: string) {
+  if (editingId.value === id) {
+    editingId.value = null
+    return
+  }
+  const p = providers.value.find((x) => x.id === id)
+  editingId.value = id
+  editName.value = p?.name ?? ''
+  editUrl.value = p?.base_url ?? ''
+  editKey.value = ''
+}
+
+async function save(id: string) {
+  await updateMut.mutateAsync({
+    providerId: id,
+    data: { name: editName.value, base_url: editUrl.value, api_key: editKey.value },
+  })
+  editingId.value = null
+  await qc.invalidateQueries()
 }
 </script>

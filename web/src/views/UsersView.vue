@@ -7,13 +7,48 @@
       <li
         v-for="u in users"
         :key="u.id"
-        class="flex items-center gap-3 rounded-xl bg-white px-4 py-3 ring-1 ring-inset ring-slate-200"
+        class="flex flex-col gap-2 rounded-xl bg-white px-4 py-3 ring-1 ring-inset ring-slate-200"
       >
-        <p class="min-w-0 flex-1 truncate text-sm text-slate-800">{{ u.email }}</p>
-        <Badge :tone="roleTone(u.role)">{{ u.role }}</Badge>
-        <Button variant="secondary" size="sm" @click="remove(u.id)">
-          {{ t('users.delete') }}
-        </Button>
+        <div class="flex items-center gap-3">
+          <p class="min-w-0 flex-1 truncate text-sm text-slate-800">{{ u.email }}</p>
+          <Badge :tone="roleTone(u.role)">{{ u.role }}</Badge>
+          <Button variant="secondary" size="sm" @click="toggleReset(u.id)">
+            {{ resettingId === u.id ? t('models.cancel') : t('users.resetPassword') }}
+          </Button>
+          <Button variant="secondary" size="sm" @click="remove(u.id)">
+            {{ t('users.delete') }}
+          </Button>
+        </div>
+        <form
+          v-if="resettingId === u.id"
+          class="flex flex-col gap-3 border-t border-slate-100 pt-3"
+          @submit.prevent="savePassword(u.id)"
+        >
+          <Field :input-id="`rp-pwd-${u.id}`" :label="t('users.newPassword')">
+            <template #default="{ inputId }">
+              <TextInput
+                :id="inputId"
+                v-model="newPassword"
+                type="password"
+                required
+                minlength="8"
+                autocomplete="new-password"
+              />
+            </template>
+          </Field>
+          <div>
+            <Button type="submit" variant="primary" size="sm" :loading="saving">
+              {{ t('models.save') }}
+            </Button>
+          </div>
+          <p
+            v-if="resetError"
+            role="alert"
+            class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"
+          >
+            {{ resetError }}
+          </p>
+        </form>
       </li>
     </ul>
     <form
@@ -51,6 +86,7 @@ import {
   useCreateUserUsersPost,
   useDeleteUserUsersUserIdDelete,
   useListUsersUsersGet,
+  useUpdateUserUsersUserIdPatch,
   type UserResponse,
 } from '../service/generated/api'
 
@@ -60,8 +96,13 @@ const usersQuery = useListUsersUsersGet()
 const users = computed<UserResponse[]>(() => usersQuery.data.value ?? [])
 const createMut = useCreateUserUsersPost()
 const deleteMut = useDeleteUserUsersUserIdDelete()
+const updateMut = useUpdateUserUsersUserIdPatch()
 const email = ref('')
 const role = ref<'member' | 'admin'>('member')
+const resettingId = ref<string | null>(null)
+const newPassword = ref('')
+const resetError = ref('')
+const saving = computed(() => updateMut.isPending.value === true)
 const roleOptions = [
   { value: 'member', label: 'member' },
   { value: 'admin', label: 'admin' },
@@ -83,6 +124,28 @@ async function create() {
 
 async function remove(id: string) {
   await deleteMut.mutateAsync({ userId: id })
+  await qc.invalidateQueries()
+}
+
+function toggleReset(id: string) {
+  resettingId.value = resettingId.value === id ? null : id
+  newPassword.value = ''
+  resetError.value = ''
+}
+
+async function savePassword(id: string) {
+  resetError.value = ''
+  try {
+    await updateMut.mutateAsync({ userId: id, data: { password: newPassword.value } })
+  } catch (e) {
+    // 失败保持表单展开并明示（如 admin 动 super_admin 的 403）。
+    resetError.value = String(
+      (e as { response?: { data?: { detail?: string } } }).response?.data?.detail ?? e,
+    )
+    return
+  }
+  resettingId.value = null
+  newPassword.value = ''
   await qc.invalidateQueries()
 }
 </script>

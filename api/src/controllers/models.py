@@ -30,6 +30,14 @@ class ProviderResponse(BaseModel):
     is_active: bool
 
 
+class ProviderUpdateRequest(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=128)
+    base_url: str | None = Field(default=None, min_length=8, max_length=512)
+    # 空（None/'')= 保持原 Key（只收不返）；要换 Key 必须传非空值。
+    api_key: str | None = Field(default=None, max_length=1024)
+    extra_headers: dict[str, str] | None = None
+
+
 def _to(p: ModelProvider) -> ProviderResponse:
     return ProviderResponse(
         id=p.id, type=p.type, name=p.name, base_url=p.base_url, is_active=p.is_active
@@ -67,6 +75,34 @@ def create_provider(
     except (Conflict, ValueError) as e:
         code = status.HTTP_409_CONFLICT if isinstance(e, Conflict) else status.HTTP_400_BAD_REQUEST
         raise HTTPException(status_code=code, detail=str(e))
+
+
+@router.patch("/{provider_id}", response_model=ProviderResponse)
+def update_provider(
+    provider_id: str,
+    payload: ProviderUpdateRequest,
+    _: User = Depends(require("models:write")),
+    db: Session = Depends(get_db),
+    me: User = Depends(current_user),
+):
+    try:
+        return _to(
+            provider_service.update_provider(
+                db,
+                tenant_id=me.tenant_id,
+                provider_id=provider_id,
+                name=payload.name,
+                base_url=payload.base_url,
+                api_key=payload.api_key,
+                extra_headers=payload.extra_headers,
+            )
+        )
+    except NotFound as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except Conflict as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.delete("/{provider_id}", status_code=status.HTTP_204_NO_CONTENT)

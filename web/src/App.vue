@@ -37,6 +37,13 @@
           >
             {{ t('nav.users') }}
           </RouterLink>
+          <RouterLink
+            to="/account"
+            active-class="bg-indigo-50 font-medium text-indigo-700"
+            class="rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-100"
+          >
+            {{ t('account.title') }}
+          </RouterLink>
         </nav>
         <div class="mt-auto flex flex-col gap-3">
           <div class="flex items-center gap-2">

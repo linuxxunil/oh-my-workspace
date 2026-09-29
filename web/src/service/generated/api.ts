@@ -102,6 +102,13 @@ export interface MeResponse {
   role: Role;
 }
 
+export interface PasswordChangeRequest {
+  /** @minLength 1 */
+  old_password: string;
+  /** @minLength 8 */
+  new_password: string;
+}
+
 export interface PermissionResponse {
   code: string;
   description: string;
@@ -147,6 +154,23 @@ export const ProviderType = {
   openai_compatible: 'openai_compatible',
   opencode_go: 'opencode_go',
 } as const;
+
+export type ProviderUpdateRequestName = string | null;
+
+export type ProviderUpdateRequestBaseUrl = string | null;
+
+export type ProviderUpdateRequestApiKey = string | null;
+
+export type ProviderUpdateRequestExtraHeadersAnyOf = {[key: string]: string};
+
+export type ProviderUpdateRequestExtraHeaders = ProviderUpdateRequestExtraHeadersAnyOf | null;
+
+export interface ProviderUpdateRequest {
+  name?: ProviderUpdateRequestName;
+  base_url?: ProviderUpdateRequestBaseUrl;
+  api_key?: ProviderUpdateRequestApiKey;
+  extra_headers?: ProviderUpdateRequestExtraHeaders;
+}
 
 export type Role = typeof Role[keyof typeof Role];
 
@@ -473,6 +497,72 @@ export function useMeAuthMeGet<TData = Awaited<ReturnType<typeof meAuthMeGet>>, 
 
 
 
+/**
+ * 本人自改密码：仅需登录（authn-only，无新权限码），验旧密码。
+ * @summary Change Password
+ */
+export const changePasswordAuthPasswordPost = (
+    passwordChangeRequest: MaybeRef<PasswordChangeRequest>,
+ signal?: AbortSignal
+) => {
+      passwordChangeRequest = unref(passwordChangeRequest);
+      
+      return apiMutator<void>(
+      {url: `/api/auth/password`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: passwordChangeRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getChangePasswordAuthPasswordPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof changePasswordAuthPasswordPost>>, TError,{data: PasswordChangeRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof changePasswordAuthPasswordPost>>, TError,{data: PasswordChangeRequest}, TContext> => {
+
+const mutationKey = ['changePasswordAuthPasswordPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof changePasswordAuthPasswordPost>>, {data: PasswordChangeRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  changePasswordAuthPasswordPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ChangePasswordAuthPasswordPostMutationResult = NonNullable<Awaited<ReturnType<typeof changePasswordAuthPasswordPost>>>
+    export type ChangePasswordAuthPasswordPostMutationBody = PasswordChangeRequest
+    export type ChangePasswordAuthPasswordPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Change Password
+ */
+export const useChangePasswordAuthPasswordPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof changePasswordAuthPasswordPost>>, TError,{data: PasswordChangeRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof changePasswordAuthPasswordPost>>,
+        TError,
+        {data: PasswordChangeRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getChangePasswordAuthPasswordPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    
 /**
  * @summary List Users
  */
@@ -1069,6 +1159,72 @@ export const useCreateProviderModelsProvidersPost = <TError = HTTPValidationErro
       > => {
 
       const mutationOptions = getCreateProviderModelsProvidersPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    
+/**
+ * @summary Update Provider
+ */
+export const updateProviderModelsProvidersProviderIdPatch = (
+    providerId: MaybeRef<string>,
+    providerUpdateRequest: MaybeRef<ProviderUpdateRequest>,
+ ) => {
+      providerId = unref(providerId);
+providerUpdateRequest = unref(providerUpdateRequest);
+      
+      return apiMutator<ProviderResponse>(
+      {url: `/api/models/providers/${providerId}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: providerUpdateRequest
+    },
+      );
+    }
+  
+
+
+export const getUpdateProviderModelsProvidersProviderIdPatchMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateProviderModelsProvidersProviderIdPatch>>, TError,{providerId: string;data: ProviderUpdateRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateProviderModelsProvidersProviderIdPatch>>, TError,{providerId: string;data: ProviderUpdateRequest}, TContext> => {
+
+const mutationKey = ['updateProviderModelsProvidersProviderIdPatch'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateProviderModelsProvidersProviderIdPatch>>, {providerId: string;data: ProviderUpdateRequest}> = (props) => {
+          const {providerId,data} = props ?? {};
+
+          return  updateProviderModelsProvidersProviderIdPatch(providerId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateProviderModelsProvidersProviderIdPatchMutationResult = NonNullable<Awaited<ReturnType<typeof updateProviderModelsProvidersProviderIdPatch>>>
+    export type UpdateProviderModelsProvidersProviderIdPatchMutationBody = ProviderUpdateRequest
+    export type UpdateProviderModelsProvidersProviderIdPatchMutationError = HTTPValidationError
+
+    /**
+ * @summary Update Provider
+ */
+export const useUpdateProviderModelsProvidersProviderIdPatch = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateProviderModelsProvidersProviderIdPatch>>, TError,{providerId: string;data: ProviderUpdateRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof updateProviderModelsProvidersProviderIdPatch>>,
+        TError,
+        {providerId: string;data: ProviderUpdateRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdateProviderModelsProvidersProviderIdPatchMutationOptions(options);
 
       return useMutation(mutationOptions, queryClient);
     }
