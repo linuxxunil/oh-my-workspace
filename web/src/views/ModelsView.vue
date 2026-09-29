@@ -16,6 +16,9 @@
             {{ editingId === p.id ? t('models.cancel') : t('models.edit') }}
           </Button>
           <Button variant="secondary" size="sm" @click="test(p.id)">{{ t('models.test') }}</Button>
+          <Button variant="secondary" size="sm" @click="remove(p.id, p.name)">
+            {{ t('models.delete') }}
+          </Button>
           <span
             v-if="results[p.id]"
             class="text-xs font-medium"
@@ -25,6 +28,13 @@
           </span>
         </div>
         <p class="truncate text-xs text-slate-500">{{ p.base_url }}</p>
+        <p
+          v-if="rowErrors[p.id]"
+          role="alert"
+          class="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700"
+        >
+          {{ rowErrors[p.id] }}
+        </p>
         <form
           v-if="editingId === p.id"
           class="flex flex-col gap-3 border-t border-slate-100 pt-3"
@@ -113,6 +123,7 @@ import { Select } from '@/packages/ui/selection'
 import {
   testConnectionModelsProvidersProviderIdTestPost,
   useCreateProviderModelsProvidersPost,
+  useDeleteProviderModelsProvidersProviderIdDelete,
   useListProvidersModelsProvidersGet,
   useUpdateProviderModelsProvidersProviderIdPatch,
   type ProviderResponse,
@@ -124,6 +135,7 @@ const providersQuery = useListProvidersModelsProvidersGet()
 const providers = computed<ProviderResponse[]>(() => providersQuery.data.value ?? [])
 const createMut = useCreateProviderModelsProvidersPost()
 const updateMut = useUpdateProviderModelsProvidersProviderIdPatch()
+const deleteMut = useDeleteProviderModelsProvidersProviderIdDelete()
 const name = ref('')
 const ptype = ref<'openai_compatible' | 'opencode_go'>('openai_compatible')
 const typeOptions = [
@@ -134,6 +146,7 @@ const typeOptions = [
 const baseUrl = ref('')
 const apiKey = ref('')
 const results = reactive<Record<string, string>>({})
+const rowErrors = reactive<Record<string, string>>({})
 const editingId = ref<string | null>(null)
 const editName = ref('')
 const editUrl = ref('')
@@ -153,6 +166,22 @@ async function create() {
 async function test(id: string) {
   const r = await testConnectionModelsProvidersProviderIdTestPost(id)
   results[id] = r.ok ? `ok(${String(r.model_count)})` : 'fail'
+}
+
+async function remove(id: string, name: string) {
+  // 原生二次确认（无 dialog 基元）；取消即返回。
+  if (!window.confirm(t('models.confirmDelete', { name }))) return
+  delete rowErrors[id]
+  try {
+    await deleteMut.mutateAsync({ providerId: id })
+  } catch (e) {
+    // 被流程引用时 409，行内明示引用名，行保留。
+    rowErrors[id] = String(
+      (e as { response?: { data?: { detail?: string } } }).response?.data?.detail ?? e,
+    )
+    return
+  }
+  await qc.invalidateQueries()
 }
 
 function toggleEdit(id: string) {

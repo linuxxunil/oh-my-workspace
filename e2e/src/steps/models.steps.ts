@@ -69,3 +69,32 @@ Then('显示检查结果', async function (this: AppWorld) {
     /(ok\(|fail)/,
   )
 })
+
+When('删除该供应商', async function (this: AppWorld) {
+  const row = this.page.locator('li', { hasText: this.currentProviderName })
+  // Playwright 默认 dismiss 原生 confirm，先挂 accept 再点（一次弹窗先建等待）。
+  this.page.once('dialog', (d) => void d.accept())
+  await row.getByRole('button', { name: '删除', exact: true }).click()
+})
+
+Then('供应商从列表中消失', async function (this: AppWorld) {
+  await expect(this.page.locator('li', { hasText: this.currentProviderName })).toHaveCount(0)
+  this.providerIds = []
+  this.currentProviderId = ''
+})
+
+When('准备一个引用该供应商的流程', async function (this: AppWorld) {
+  const { createWorkflowWithLlm } = await import('../support/api')
+  const { e2eName } = await import('../support/naming')
+  const { deleteWorkflow } = await import('../support/api')
+  const wname = e2eName('bound')
+  const wid = await createWorkflowWithLlm(wname, this.currentProviderId)
+  this.workflowIds.push(wid)
+  this.registerCleanup(() => deleteWorkflow(wid))
+})
+
+Then('显示被引用拒绝且供应商仍在', async function (this: AppWorld) {
+  const row = this.page.locator('li', { hasText: this.currentProviderName })
+  await expect(row.getByRole('alert')).toContainText('引用')
+  await expect(row).toBeVisible()
+})

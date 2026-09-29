@@ -64,6 +64,32 @@ export async function findWorkflowByName(name: string): Promise<string | null> {
   })
 }
 
+/** 建一个 llm 引用指定供应商的流程（删除拒绝场景的准备层）。 */
+export async function createWorkflowWithLlm(name: string, providerId: string): Promise<string> {
+  return asRoot(async () => {
+    const wf = await api.createWorkflowWorkflowsPost({
+      name,
+      description: '',
+      dag: {
+        nodes: [
+          { id: 'start', type: 'start', config: {} },
+          {
+            id: 'l',
+            type: 'llm',
+            config: { provider_id: providerId, model: 'm', prompt: 'hi', output_key: 'a' },
+          },
+          { id: 'end', type: 'end', config: {} },
+        ],
+        edges: [
+          { id: 'e1', source: 'start', target: 'l' },
+          { id: 'e2', source: 'l', target: 'end' },
+        ],
+      },
+    })
+    return wf.id
+  })
+}
+
 /** e2e:full 重置用：删掉所有 E2E 前缀资源（先子后主：流程→供应商→用户）。 */
 export async function resetE2EResources(): Promise<{ workflows: number; providers: number; users: number }> {
   return asRoot(async () => {

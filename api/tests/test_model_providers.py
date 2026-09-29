@@ -125,3 +125,55 @@ def test_update_provider_patch_and_key_keep_semantics(client, monkeypatch):
     assert r.json()["base_url"] == "https://api2.example.com/v1"
     client.post(f"/models/providers/{pid}/test", headers=root)
     assert seen[-1] == "Bearer new-key"
+
+
+def test_delete_provider_bound_by_latest_version_returns_409(client):
+    root = auth_headers(login(client, "super_admin"))
+    member = auth_headers(login(client, "member"))
+    r = client.post(
+        "/models/providers",
+        headers=root,
+        json={"type": "openai_compatible", "name": "p-bound", "base_url": "https://b.example.com"},
+    )
+    pid = r.json()["id"]
+    # member 删 → 403
+    r = client.delete(f"/models/providers/{pid}", headers=member)
+    assert r.status_code == 403
+    # 无引用 → 204
+    r = client.delete(f"/models/providers/{pid}", headers=root)
+    assert r.status_code == 204
+    # 重建 + 被最新版本引用 → 409，被引用名在 detail 中，供应商仍在
+    r = client.post(
+        "/models/providers",
+        headers=root,
+        json={"type": "openai_compatible", "name": "p-bound", "base_url": "https://b.example.com"},
+    )
+    pid = r.json()["id"]
+    dag = {
+        "nodes": [
+            {"id": "s", "type": "start", "config": {}},
+            {
+                "id": "l",
+                "type": "llm",
+                "config": {
+                    "provider_id": pid,
+                    "model": "m",
+                    "prompt": "hi",
+                    "output_key": "answer",
+                },
+            },
+            {"id": "e", "type": "end", "config": {}},
+        ],
+        "edges": [
+            {"id": "e1", "source": "s", "target": "l"},
+            {"id": "e2", "source": "l", "target": "e"},
+        ],
+    }
+    r = client.post(
+        "/workflows", headers=root, json={"name": "w-bound", "description": "", "dag": dag}
+    )
+    assert r.status_code == 201, r.text
+    r = client.delete(f"/models/providers/{pid}", headers=root)
+    assert r.status_code == 409, r.text
+    assert "w-bound" in r.json()["detail"]
+    assert any(p["id"] == pid for p in client.get("/models/providers", headers=root).json())

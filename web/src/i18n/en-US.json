@@ -30,6 +30,8 @@
     "edit": "Edit",
     "save": "Save",
     "cancel": "Cancel",
+    "delete": "Delete",
+    "confirmDelete": "Delete provider {name}?",
     "empty": "No providers"
   },
   "account": {

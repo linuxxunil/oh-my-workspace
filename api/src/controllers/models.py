@@ -116,6 +116,8 @@ def delete_provider(
         provider_service.delete_provider(db, tenant_id=me.tenant_id, provider_id=provider_id)
     except NotFound as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except Conflict as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
 
 @router.get("/{provider_id}/models", response_model=list[str])

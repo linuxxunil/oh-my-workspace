@@ -5,11 +5,13 @@ spike 脚手架见 api/scripts/spike_opencode_go.py（PLAN-002 S2，只读探测
 """
 
 import httpx
+from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
+from src.dag import Dag
 from src.errors import Conflict, NotFound
 from src.libs.http import assert_safe_url
-from src.models import ModelProvider, ProviderType
+from src.models import ModelProvider, ProviderType, Workflow, WorkflowVersion
 from src.services import cache as cache_svc
 
 
@@ -80,8 +82,44 @@ def create_provider(
 
 def delete_provider(db: Session, *, tenant_id: str, provider_id: str) -> None:
     p = _get(db, tenant_id=tenant_id, provider_id=provider_id)
+    bound = _referencing_workflows(db, tenant_id=tenant_id, provider_id=provider_id)
+    if bound:
+        raise Conflict(f"已被以下流程引用：{'、'.join(bound)}")
     db.delete(p)
     db.commit()
+
+
+def _referencing_workflows(db: Session, *, tenant_id: str, provider_id: str) -> list[str]:
+    """查各流程最新版本 DAG 的 llm 节点引用；脏版本跳过（只认合法 llm 节点）。"""
+    names: list[str] = []
+    workflows = (
+        db.query(Workflow).filter(Workflow.tenant_id == tenant_id).order_by(Workflow.name).all()
+    )
+    for wf in workflows:
+        dag = _latest_dag(db, workflow_id=wf.id)
+        if dag is None:
+            continue
+        for n in dag.nodes:
+            if n.type == "llm" and str(n.config.get("provider_id") or "") == provider_id:
+                names.append(wf.name)
+                break
+    return names
+
+
+def _latest_dag(db: Session, *, workflow_id: str) -> Dag | None:
+    """取最新版本 DAG；脏版本返回 None（不挡删除判定）。"""
+    ver = (
+        db.query(WorkflowVersion)
+        .filter(WorkflowVersion.workflow_id == workflow_id)
+        .order_by(WorkflowVersion.version_no.desc())
+        .first()
+    )
+    if ver is None:
+        return None
+    try:
+        return Dag.model_validate(ver.dag)
+    except ValidationError:  # 脏版本不挡删除判定
+        return None
 
 
 def update_provider(
