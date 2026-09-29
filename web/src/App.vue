@@ -6,15 +6,6 @@
       class="sticky top-0 z-40 h-16 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur"
     >
       <div class="mx-auto flex h-full max-w-[100rem] items-center gap-3 px-4 sm:px-6">
-        <button
-          type="button"
-          class="hidden size-9 shrink-0 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 md:inline-flex"
-          :aria-label="t(collapsed ? 'nav.expandSidebar' : 'nav.collapseSidebar')"
-          :aria-expanded="!collapsed"
-          @click="toggleCollapsed"
-        >
-          <span aria-hidden="true" class="text-lg leading-none">{{ collapsed ? '›' : '‹' }}</span>
-        </button>
         <Drawer v-model:open="mobileNavOpen" :label="t('nav.primary')" side="left">
           <template #trigger="{ triggerProps }">
             <button
@@ -136,6 +127,19 @@
             <span v-if="!collapsed" class="truncate">{{ t(item.label) }}</span>
           </RouterLink>
         </nav>
+        <div class="mt-auto pt-3">
+          <button
+            type="button"
+            class="flex min-h-10 w-full items-center rounded-lg text-sm text-slate-600 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40"
+            :class="collapsed ? 'justify-center px-1' : 'gap-3 px-3'"
+            :aria-label="t(collapsed ? 'nav.expandSidebar' : 'nav.collapseSidebar')"
+            :aria-expanded="!collapsed"
+            @click="toggleCollapsed"
+          >
+            <span aria-hidden="true" class="text-lg leading-none">{{ collapsed ? '›' : '‹' }}</span>
+            <span v-if="!collapsed" class="truncate">{{ t('nav.collapseSidebar') }}</span>
+          </button>
+        </div>
       </aside>
       <main id="main" class="mx-auto w-full min-w-0 flex-1 p-4 sm:p-6">
         <RouterView />

@@ -11,12 +11,14 @@ async function dragHandle(page: Page, from: Locator, to: Locator): Promise<void>
 }
 
 /** 删边（模板自带的 start→end 直连必须删：与 start→code→end 扇出会并发写 vars，
- * LangGraph 无 reducer 即 INVALID_CONCURRENT_GRAPH_UPDATE）。带重试，删不掉即失败。 */
+ * LangGraph 无 reducer 即 INVALID_CONCURRENT_GRAPH_UPDATE）。带重试，删不掉即失败。
+ * 左右手柄下模板边为完全水平线（bbox 高度 0），Playwright 可见性检查恒失败，
+ * 故 force 点选；选中+Backspace 逻辑不变。 */
 async function deleteEdge(page: Page, edgeId: string): Promise<void> {
   const edge = page.locator(`.vue-flow__edge[data-id="${edgeId}"]`)
   for (let i = 0; i < 3; i += 1) {
     if ((await edge.count()) === 0) return
-    await edge.first().click({ timeout: 8000 })
+    await edge.first().click({ timeout: 8000, force: true })
     await page.keyboard.press('Backspace')
     try {
       await expect(edge).toHaveCount(0, { timeout: 3000 })

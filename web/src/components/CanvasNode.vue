@@ -6,10 +6,10 @@
       selected ? 'ring-2 ring-indigo-500' : '',
     ]"
   >
-    <Handle type="target" :position="Position.Top" />
+    <Handle type="target" :position="Position.Left" />
     <span aria-hidden="true" :class="['h-2.5 w-2.5 shrink-0 rounded-full', dot]" />
     <span class="min-w-0 flex-1 truncate text-xs font-semibold text-slate-700">{{ nodeType }}</span>
-    <Handle type="source" :position="Position.Bottom" />
+    <Handle type="source" :position="Position.Right" />
   </div>
 </template>
 
