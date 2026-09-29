@@ -97,6 +97,9 @@ When(
   await page.getByRole('textbox', { name: '输出键', exact: true }).fill('m')
   await page.getByRole('button', { name: '保存配置' }).click()
   await expect(page.getByRole('status')).toHaveText('ok')
+  // 右侧面板收起后再连线（展开的面板会遮挡节点 handle，真实操作亦如此）。
+  await page.getByRole('button', { name: '关闭配置面板' }).click()
+  await expect(page.locator('aside[aria-label="节点配置"]')).toHaveCount(0)
 
   // 连线 start→code→end。
   const startNode = page.locator('.vue-flow__node[data-id="start"]')
@@ -127,6 +130,14 @@ When('发布该流程并以输入 {string} 运行', async function (this: AppWor
   await expect(page.getByRole('status')).toHaveText('published')
   await page.getByRole('textbox', { name: '输入 JSON' }).fill(inputsJson)
   await page.getByRole('button', { name: '运行' }).click()
+})
+
+Then('运行历史中出现 {word} 记录', async function (this: AppWorld, status: string) {
+  // 页内运行历史区（S3 新增）：Badge 文本与状态精确一致。
+  const history = this.page.locator('section', {
+    has: this.page.getByRole('heading', { name: '运行历史' }),
+  })
+  await expect(history.getByText(status, { exact: true }).first()).toBeVisible()
 })
 
 Then('运行状态为 {word} 且输出 {word} 为 {int}', async function (

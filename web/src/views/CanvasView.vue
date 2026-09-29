@@ -1,40 +1,56 @@
 <template>
-  <section aria-labelledby="canvas-title">
-    <h1 id="canvas-title">{{ t('flows.title') }} / {{ workflowId }}</h1>
-    <div class="toolbar" role="toolbar" aria-label="节点面板">
+  <section aria-labelledby="canvas-title" class="flex flex-col gap-4">
+    <h1 id="canvas-title" class="text-lg font-semibold text-slate-800">
+      {{ t('flows.title') }}
+      <span class="font-mono text-xs font-normal text-slate-600">/ {{ workflowId }}</span>
+    </h1>
+    <div class="toolbar" role="toolbar" :aria-label="t('canvas.nodePanel')">
       <Button v-for="kind in kinds" :key="kind" variant="secondary" size="sm" @click="addNode(kind)">
         + {{ kind }}
       </Button>
       <Button variant="secondary" size="sm" :disabled="!selectedNode" @click="removeSelected">
-        删除选中
+        {{ t('canvas.deleteSelected') }}
       </Button>
     </div>
-    <div class="canvas">
-      <VueFlow
-        ref="flow"
-        v-model:nodes="nodes"
-        v-model:edges="edges"
-        :node-types="nodeTypes"
-        @connect="onConnect"
-        @node-click="onNodeClick"
-        fit-view-on-init
+    <div class="flex items-stretch gap-4">
+      <div class="canvas min-w-0 flex-1">
+        <VueFlow
+          ref="flow"
+          v-model:nodes="nodes"
+          v-model:edges="edges"
+          :node-types="nodeTypes"
+          @connect="onConnect"
+          @node-click="onNodeClick"
+          fit-view-on-init
+        >
+          <Background pattern-color="#cbd5e1" :gap="24" />
+          <MiniMap pannable zoomable />
+          <Controls position="bottom-right" />
+        </VueFlow>
+      </div>
+      <aside
+        v-if="selectedNode"
+        class="flex w-80 shrink-0 flex-col gap-4 rounded-xl bg-white p-5 ring-1 ring-inset ring-slate-200"
+        :aria-label="t('canvas.configPanel')"
       >
-        <Background pattern-color="#cbd5e1" :gap="24" />
-        <MiniMap pannable zoomable />
-        <Controls position="bottom-right" />
-      </VueFlow>
-    </div>
-    <form
-      v-if="selectedNode"
-      class="flex max-w-xl flex-col gap-4 rounded-xl bg-white p-5 ring-1 ring-inset ring-slate-200"
-      @submit.prevent="applyConfig"
-    >
-      <h2 class="text-sm font-semibold text-slate-800">
-        节点 {{ selectedNode.id }}（{{ nodeTypeOf(selectedNode) }}）
-      </h2>
-      <p v-if="selectedKind === 'start' || selectedKind === 'end'" class="text-sm text-slate-500">
-        {{ t('canvas.noConfig') }}
-      </p>
+        <div class="flex items-center gap-2">
+          <Badge tone="indigo">{{ selectedKind }}</Badge>
+          <p class="min-w-0 flex-1 truncate text-sm font-semibold text-slate-800">
+            {{ t('canvas.nodeConfig', { id: selectedNode.id }) }}
+          </p>
+          <Button
+            variant="secondary"
+            size="sm"
+            :aria-label="t('canvas.closePanel')"
+            @click="selectedNode = null"
+          >
+            ×
+          </Button>
+        </div>
+        <form class="flex flex-col gap-4" @submit.prevent="applyConfig">
+          <p v-if="selectedKind === 'start' || selectedKind === 'end'" class="text-sm text-slate-500">
+            {{ t('canvas.noConfig') }}
+          </p>
       <template v-if="selectedKind === 'llm'">
         <Field input-id="cfg-provider" :label="t('canvas.provider')">
           <template #default="{ inputId }">
@@ -104,28 +120,70 @@
           </template>
         </Field>
       </template>
+          <div>
+            <Button
+              type="submit"
+              variant="primary"
+              size="sm"
+              :disabled="selectedKind === 'start' || selectedKind === 'end'"
+            >
+              {{ t('canvas.saveConfig') }}
+            </Button>
+          </div>
+        </form>
+      </aside>
+    </div>
+    <div class="actions flex items-center gap-2">
+      <Button variant="secondary" size="sm" @click="save">{{ t('canvas.saveVersion') }}</Button>
+      <Button variant="secondary" size="sm" @click="publish">{{ t('flows.publish') }}</Button>
+      <p v-if="notice" role="status" class="text-sm text-slate-600">{{ notice }}</p>
+    </div>
+    <form
+      class="flex max-w-xl flex-col gap-3 rounded-xl bg-white p-5 ring-1 ring-inset ring-slate-200"
+      @submit.prevent="run"
+    >
+      <Field input-id="run-inputs" :label="t('flows.inputs')">
+        <template #default="{ inputId }">
+          <Textarea :id="inputId" v-model="inputsText" :rows="3" class="font-mono" />
+        </template>
+      </Field>
       <div>
-        <Button
-          type="submit"
-          variant="primary"
-          size="sm"
-          :disabled="selectedKind === 'start' || selectedKind === 'end'"
-        >
-          {{ t('flows.save') }}配置
-        </Button>
+        <Button type="submit" variant="primary" size="sm">{{ t('flows.run') }}</Button>
       </div>
     </form>
-    <div class="actions">
-      <Button variant="secondary" size="sm" @click="save">{{ t('flows.save') }}版本</Button>
-      <Button variant="secondary" size="sm" @click="publish">{{ t('flows.publish') }}</Button>
-      <p v-if="notice" role="status">{{ notice }}</p>
-    </div>
-    <form @submit.prevent="run">
-      <label for="run-inputs">{{ t('flows.inputs') }}</label>
-      <textarea id="run-inputs" v-model="inputsText" rows="4" cols="60">{}</textarea>
-      <Button type="submit" variant="primary" size="sm">{{ t('flows.run') }}</Button>
-    </form>
-    <pre v-if="outputs" aria-label="outputs">{{ outputs }}</pre>
+    <pre
+      v-if="outputs"
+      aria-label="outputs"
+      class="max-w-xl overflow-auto rounded-xl bg-slate-900 p-4 font-mono text-xs text-slate-100"
+    >{{ outputs }}</pre>
+    <section aria-labelledby="runs-title" class="flex max-w-xl flex-col gap-2">
+      <h2 id="runs-title" class="text-sm font-semibold text-slate-800">
+        {{ t('canvas.runHistory') }}
+      </h2>
+      <p v-if="runsLoading" class="text-xs text-slate-600">…</p>
+      <p v-else-if="!runs.length" class="text-xs text-slate-600">{{ t('canvas.noRuns') }}</p>
+      <ul v-else class="flex flex-col gap-2">
+        <li
+          v-for="r in runs"
+          :key="r.id"
+          class="rounded-xl bg-white px-4 py-3 ring-1 ring-inset ring-slate-200"
+        >
+          <div class="flex items-center gap-2">
+            <Badge :tone="r.status === 'succeeded' ? 'green' : 'red'">{{ r.status }}</Badge>
+            <span class="min-w-0 flex-1 truncate font-mono text-xs text-slate-500">{{ r.id }}</span>
+          </div>
+          <p v-if="r.error" class="mt-1 truncate text-xs text-red-700">{{ r.error }}</p>
+          <details v-if="r.outputs" class="mt-1">
+            <summary class="cursor-pointer text-xs text-indigo-700">
+              {{ t('canvas.runOutputs') }}
+            </summary>
+            <pre
+              class="mt-1 overflow-auto rounded-lg bg-slate-900 p-3 font-mono text-xs text-slate-100"
+            >{{ formatOutputs(r.outputs) }}</pre>
+          </details>
+        </li>
+      </ul>
+    </section>
   </section>
 </template>
 
@@ -143,6 +201,7 @@ import {
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
 import { MiniMap } from '@vue-flow/minimap'
+import { Badge } from '@/packages/ui/badge'
 import { Button } from '@/packages/ui/button'
 import { Field } from '@/packages/ui/form'
 import { Textarea, TextInput } from '@/packages/ui/input'
@@ -173,6 +232,7 @@ import {
   runWorkflowWorkflowsWorkflowIdRunPost,
   useListProvidersModelsProvidersGet,
   type Dag,
+  type RunResponse,
 } from '../service/generated/api'
 import { fromVueFlow, newNodeId, toVueFlow } from '../utils/dag'
 
@@ -206,6 +266,26 @@ const draft = ref<Record<string, string>>({})
 const inputsText = ref('{}')
 const outputs = ref('')
 const notice = ref('')
+const runs = ref<RunResponse[]>([])
+const runsLoading = ref(false)
+
+async function loadRuns() {
+  runsLoading.value = true
+  try {
+    runs.value = await listRunsWorkflowsWorkflowIdRunsGet(workflowId)
+  } finally {
+    runsLoading.value = false
+  }
+}
+void loadRuns()
+
+function formatOutputs(o: unknown): string {
+  try {
+    return JSON.stringify(o, null, 2)
+  } catch {
+    return String(o)
+  }
+}
 
 const providersQuery = useListProvidersModelsProvidersGet()
 const providersPending = computed(() => providersQuery.isPending.value === true)
@@ -266,6 +346,8 @@ function onNodeClick(event: NodeMouseEvent) {
 }
 function removeSelected() {
   if (!selectedNode.value) return
+  // 原生二次确认（无 dialog 基元）；取消即返回。
+  if (!window.confirm(t('canvas.confirmRemoveNode', { id: selectedNode.value.id }))) return
   const id = selectedNode.value.id
   nodes.value = nodes.value.filter((n) => n.id !== id)
   edges.value = edges.value.filter((e) => e.source !== id && e.target !== id)
@@ -327,19 +409,22 @@ async function run() {
   try {
     inputs = JSON.parse(inputsText.value) as Record<string, unknown>
   } catch {
-    notice.value = 'inputs JSON 非法'
+    notice.value = t('canvas.invalidInputs')
     return
   }
   const r = await runWorkflowWorkflowsWorkflowIdRunPost(workflowId, { inputs })
   outputs.value = JSON.stringify({ status: r.status, outputs: r.outputs, error: r.error }, null, 2)
-  await listRunsWorkflowsWorkflowIdRunsGet(workflowId)
+  await loadRuns()
 }
 </script>
 
 <style>
 .canvas {
-  height: 480px;
-  border: 1px solid #ccc;
+  height: calc(100vh - 340px);
+  min-height: 420px;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
 }
 .toolbar button {
   margin-right: 8px;

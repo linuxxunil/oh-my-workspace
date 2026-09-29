@@ -22,6 +22,7 @@
     当 在画布中连线 start → code → end 并保存为新版本
     当 发布该流程并以输入 '{"n": 21}' 运行
     那么 运行状态为 succeeded 且输出 m 为 42
+    那么 运行历史中出现 succeeded 记录
     那么 清理以 "E2E" 为前缀的流程与用户
 
   @authenticated

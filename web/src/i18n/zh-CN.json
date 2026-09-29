@@ -76,6 +76,18 @@
     "zoomIn": "放大",
     "zoomOut": "缩小",
     "fitView": "适应视图",
-    "toggleInteractive": "锁定或解锁交互"
+    "toggleInteractive": "锁定或解锁交互",
+    "nodePanel": "节点面板",
+    "deleteSelected": "删除选中",
+    "configPanel": "节点配置",
+    "nodeConfig": "节点 {id}",
+    "closePanel": "关闭配置面板",
+    "saveConfig": "保存配置",
+    "saveVersion": "保存版本",
+    "confirmRemoveNode": "确定删除节点 {id}？",
+    "invalidInputs": "输入 JSON 非法",
+    "runHistory": "运行历史",
+    "noRuns": "暂无运行记录",
+    "runOutputs": "输出详情"
   }
 }

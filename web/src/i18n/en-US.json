@@ -76,6 +76,18 @@
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",
     "fitView": "Fit view",
-    "toggleInteractive": "Toggle interactivity"
+    "toggleInteractive": "Toggle interactivity",
+    "nodePanel": "Node panel",
+    "deleteSelected": "Delete selected",
+    "configPanel": "Node config",
+    "nodeConfig": "Node {id}",
+    "closePanel": "Close config panel",
+    "saveConfig": "Save config",
+    "saveVersion": "Save version",
+    "confirmRemoveNode": "Delete node {id}?",
+    "invalidInputs": "Invalid inputs JSON",
+    "runHistory": "Run history",
+    "noRuns": "No runs yet",
+    "runOutputs": "Outputs"
   }
 }
