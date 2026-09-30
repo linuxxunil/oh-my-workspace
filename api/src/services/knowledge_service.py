@@ -55,10 +55,8 @@ def cosine(a: list[float], b: list[float]) -> float:
     return sum(x * y for x, y in zip(a, b))
 
 
-def search(db: Session, *, tenant_id: str, query: str, top_k: int = 3) -> list[str]:
-    qv = embed(query)
-    qt = tokens(query)
-    rows = db.query(Chunk).filter(Chunk.tenant_id == tenant_id).all()
+def _ranked(qv: list[float], qt: set[str], rows: list[Chunk], top_k: int) -> list[str]:
+    """共享终排：0.7 关键词重合 + 0.3 余弦（两检索路径共用，语义单点）。"""
     scored: list[tuple[float, str]] = []
     for ch in rows:
         kw = len(qt & tokens(ch.content)) / max(len(qt | tokens(ch.content)), 1)
@@ -66,3 +64,37 @@ def search(db: Session, *, tenant_id: str, query: str, top_k: int = 3) -> list[s
         scored.append((0.7 * kw + 0.3 * cos, ch.content))
     scored.sort(key=lambda x: x[0], reverse=True)
     return [c for _, c in scored[:top_k]]
+
+
+def _search_python(db: Session, *, tenant_id: str, query: str, top_k: int) -> list[str]:
+    """非 PG 路径（sqlite 单测）：全量 load 后 Python 重排（REQ-013 前行为原样下沉）。"""
+    qv = embed(query)
+    qt = tokens(query)
+    rows = db.query(Chunk).filter(Chunk.tenant_id == tenant_id).all()
+    return _ranked(qv, qt, rows, top_k)
+
+
+def _search_pg(db: Session, *, tenant_id: str, query: str, top_k: int) -> list[str]:
+    """PG 路径：向量排序下推（`ORDER BY embedding <=> :qv LIMIT candidate`）后 Python 重排。
+
+    候选集 `max(top_k*10, 50)` 覆盖常规数据全量重排的 top_k；终排与 `_search_python` 同一 `_ranked`。
+    """
+    qv = embed(query)
+    qt = tokens(query)
+    candidate = max(top_k * 10, 50)
+    rows = (
+        db.query(Chunk)
+        .filter(Chunk.tenant_id == tenant_id)
+        .order_by(Chunk.embedding.op("<=>")(qv))
+        .limit(candidate)
+        .all()
+    )
+    return _ranked(qv, qt, rows, top_k)
+
+
+def search(db: Session, *, tenant_id: str, query: str, top_k: int = 3) -> list[str]:
+    """知识检索入口：按方言分发（PG 下推向量排序，sqlite 全量；混合公式两边一致）。"""
+    bind = db.bind
+    if bind is not None and bind.dialect.name == "postgresql":
+        return _search_pg(db, tenant_id=tenant_id, query=query, top_k=top_k)
+    return _search_python(db, tenant_id=tenant_id, query=query, top_k=top_k)
