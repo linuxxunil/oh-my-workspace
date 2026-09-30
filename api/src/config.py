@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     jwt_expire_minutes: int = 60 * 8
     # 为空则 code 节点本地执行（开发直跑）；S5 起 sandbox 服务后配 http://localhost:18091。
     sandbox_url: str = ""
+    # provider api_key Fernet 主密钥（REQ-012）：44 字符 urlsafe-base64（32 字节）。
+    # 默认 dev-only 零字节 key（生产必换，见 docs/release.md）；非法格式首次加解密时抛 ValueError。
+    api_master_key: str = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
     # dev 自举建表开关；单测默认关（不碰真实 PG），本地直跑时置 1。
     auto_migrate: bool = False
 

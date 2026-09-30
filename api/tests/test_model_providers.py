@@ -65,6 +65,65 @@ def test_reject_inner_base_url(client):
     assert r.status_code == 400
 
 
+def test_api_key_encrypted_at_rest_and_legacy_fallback(client, monkeypatch):
+    """REQ-012 AC3/AC4：入库为 Fernet 密文且≠明文；老明文行兜底可用。"""
+    import src.services.provider_service as svc
+    from src.db import get_db
+    from src.models import ModelProvider
+
+    root = auth_headers(login(client, "super_admin"))
+    r = client.post(
+        "/models/providers",
+        headers=root,
+        json={
+            "type": "openai_compatible",
+            "name": "p-enc",
+            "base_url": "https://api.example.com/v1",
+            "api_key": "super-secret",
+        },
+    )
+    assert r.status_code == 201, r.text
+    pid = r.json()["id"]
+    assert "api_key" not in r.json()
+    # 直接读 DB raw：必须为 gAAAA 密文且与明文不等
+    from src.main import app
+
+    gen = app.dependency_overrides[get_db]()
+    db = next(gen)
+    try:
+        row = db.query(ModelProvider).filter(ModelProvider.id == pid).one()
+        assert row.api_key != "super-secret"
+        assert row.api_key.startswith("gAAAA")
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+        db.close()
+    # 老明文行兜底：手写一条明文，_auth_headers 仍拼出明文 Bearer
+    seen: list[str] = []
+
+    def _fake(url: str, headers: dict, timeout_s: float = 10.0):
+        seen.append(headers.get("Authorization", ""))
+        return _fake_models(httpx.Request("GET", url))
+
+    monkeypatch.setattr(svc, "_http_get", _fake)
+    gen = app.dependency_overrides[get_db]()
+    db = next(gen)
+    try:
+        row = db.query(ModelProvider).filter(ModelProvider.id == pid).one()
+        row.api_key = "legacy-plain"
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+        db.close()
+    client.post(f"/models/providers/{pid}/test", headers=root)
+    assert seen[-1] == "Bearer legacy-plain"
+
+
 def test_update_provider_patch_and_key_keep_semantics(client, monkeypatch):
     import src.services.provider_service as svc
 

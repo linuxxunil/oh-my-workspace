@@ -66,7 +66,7 @@ class ProviderType(str, enum.Enum):
 
 
 class ModelProvider(Base):
-    """模型供应商；api_key 永不经 API 返回（加密存 KMS 为二期，见 PLAN-001 R1）。"""
+    """模型供应商；api_key 为 Fernet 密文落库，明文永不落库（REQ-012）；空串=无 Key；永不经 API 返回。"""
 
     __tablename__ = "model_providers"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uid)
@@ -74,7 +74,7 @@ class ModelProvider(Base):
     type: Mapped[ProviderType] = mapped_column(Enum(ProviderType))
     name: Mapped[str] = mapped_column(String(128))
     base_url: Mapped[str] = mapped_column(String(512))
-    api_key: Mapped[str] = mapped_column(String(1024), default="")
+    api_key: Mapped[str] = mapped_column(String(2048), default="")
     extra_headers: Mapped[dict] = mapped_column(JSON, default=dict)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)

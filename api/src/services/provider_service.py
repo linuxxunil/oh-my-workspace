@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 
 from src.dag import Dag
 from src.errors import Conflict, NotFound
+from src.libs import crypto
 from src.libs.http import assert_safe_url
 from src.models import ModelProvider, ProviderType, Workflow, WorkflowVersion
 from src.services import cache as cache_svc
@@ -31,7 +32,9 @@ def _http_post(url: str, headers: dict, payload: dict, timeout_s: float = 60.0) 
 
 
 def _auth_headers(p: ModelProvider) -> dict[str, str]:
-    h = {"Authorization": f"Bearer {p.api_key}"} if p.api_key else {}
+    """出站鉴权头：DB 密文经 crypto.decrypt 还原后拼 Bearer（老明文行兜底，见 libs/crypto）。"""
+    plain = crypto.decrypt(p.api_key) if p.api_key else ""
+    h = {"Authorization": f"Bearer {plain}"} if plain else {}
     h.update(p.extra_headers or {})
     return h
 
@@ -96,7 +99,7 @@ def create_provider(
         type=type,
         name=name,
         base_url=base_url.rstrip("/"),
-        api_key=api_key,
+        api_key=crypto.encrypt(api_key) if api_key else "",
         extra_headers=extra_headers or {},
     )
     db.add(p)
@@ -172,7 +175,7 @@ def update_provider(
         assert_safe_url(base_url)
         p.base_url = base_url.rstrip("/")
     if api_key:
-        p.api_key = api_key
+        p.api_key = crypto.encrypt(api_key)
     if extra_headers is not None:
         _check_extra_headers(extra_headers)
         p.extra_headers = extra_headers

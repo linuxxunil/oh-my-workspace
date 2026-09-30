@@ -36,6 +36,13 @@ API_DATABASE_URL=<生产库> PYTHONPATH=api uv run --project api alembic -c api/
 - 旧库（有表、无 `alembic_version`）：先 `alembic -c api/alembic.ini stamp head` 一次，再 `upgrade head` 即空操作。
 - 回滚：`alembic -c api/alembic.ini downgrade -1`（基线 `downgrade base` 会删全表，生产禁用）。
 
+## 主密钥（REQ-012，provider api_key Fernet 加密）
+
+- 生产必配正式 `API_MASTER_KEY`（44 字符 urlsafe-base64），生成：
+  `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`。
+- 换 key 后果：老密文不可解（Fernet 单 key），需重填供应商 Key；老明文行仍可用（双读兜底），下次写回自动收敛为密文。
+- 降级 `0002→0001` 会把 `api_key` 缩回 1024（密文可能截断），生产禁用，仅 dev 可用。
+
 沙箱跑时隔离（强制）：
 
 ```bash
